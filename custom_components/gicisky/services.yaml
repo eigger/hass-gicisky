@@ -29,12 +29,10 @@ write:
       required: false
       example: '0'
       selector:
-        select:
-          options:
-            - 0
-            - 90
-            - 180
-            - 270
+        number:
+          min: 0
+          max: 270
+          step: 90
     background:
       name: Background
       description: "Background Color (white, black, red), default: white"
@@ -70,6 +68,6 @@ write:
       name: Dry Run
       description: "Generate image without sending to device"
       required: false
-      default: false
+      example: 'false'
       selector:
         boolean:
