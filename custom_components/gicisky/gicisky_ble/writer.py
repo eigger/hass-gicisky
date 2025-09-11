@@ -115,11 +115,11 @@ class GiciskyClient:
         await self.client.stop_notify(self.cmd_uuid)
 
     @disconnect_on_missing_services
-    async def write(self, uuid: str, data: bytes) -> None:
+    async def write(self, uuid: str, data: bytes, response = False) -> None:
         _LOGGER.debug("Write UUID=%s data=%s", uuid, len(data))
         chunk = len(data)
         for i in range(0, len(data), chunk):
-            await self.client.write_gatt_char(uuid, data[i : i + chunk])
+            await self.client.write_gatt_char(uuid, data[i : i + chunk], response)
             #await sleep(0.05)
 
     def _notification_handler(self, _: Any, data: bytearray) -> None:
