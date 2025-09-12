@@ -32,7 +32,6 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         self.last_service_info: BluetoothServiceInfoBleak | None = None
 
         self.device: DeviceEntry | None = None
-        self.last_updated: datetime | None = None
         self.is_connected: bool = False
 
     def supported(self, data: BluetoothServiceInfoBleak) -> bool:
@@ -88,26 +87,13 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         self.update_predefined_sensor(
             SensorLibrary.VOLTAGE__ELECTRIC_POTENTIAL_VOLT, round(volt, 1)
         )
-        # self.update_predefined_sensor(
-        #     SensorLibrary.TIMESTAMP__NONE, self.last_updated, None, "Last Update Time"
-        # )
-        # self.update_predefined_binary_sensor(
-        #     BinarySensorDeviceClass.CONNECTIVITY, self.is_connected
-        # )
         return True
     
-    async def last_update(self):
-        now_utc: datetime = datetime.now(timezone.utc)
-        self.last_updated = now_utc
-
     async def set_connected(self, connected: bool):
         self.is_connected = connected
     
     async def async_poll(self) -> SensorUpdate:
         self._events_updates.clear()
-        self.update_predefined_sensor(
-            SensorLibrary.TIMESTAMP__NONE, self.last_updated, None, "Last Update Time"
-        )
         self.update_predefined_binary_sensor(
             BinarySensorDeviceClass.CONNECTIVITY, self.is_connected
         )
