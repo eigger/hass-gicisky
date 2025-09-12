@@ -38,6 +38,7 @@ PLATFORMS: list[Platform] = [
     Platform.EVENT,
     Platform.SENSOR,
     Platform.CAMERA,
+    Platform.IMAGE
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,9 +114,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         update_interval=timedelta(hours=24),
     )
 
+    image_coordinator: DataUpdateCoordinator[bytes] = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+    )
     entry.runtime_data = bt_coordinator
     entry.runtime_data.poll_coordinator = poll_coordinator
     hass.data[DOMAIN][entry.entry_id]['poll_coordinator'] = poll_coordinator
+    hass.data[DOMAIN][entry.entry_id]['image_coordinator'] = image_coordinator
     await poll_coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -137,11 +144,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 address = hass.data[DOMAIN][entry_id]['address']
                 data = hass.data[DOMAIN][entry_id]['data']
                 coordinator = hass.data[DOMAIN][entry_id]['poll_coordinator']
+                image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
                 ble_device = async_ble_device_from_address(hass, address)
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
                 image = await hass.async_add_executor_job(customimage, entry_id, data.device, service, hass)
-
+                image_bytes = BytesIO()
+                image.save(image_bytes, "PNG")
                 # Always update the camera entity with the generated image
                 entity_registry = er.async_get(hass)
                 camera_entity_id = entity_registry.async_get_entity_id(
@@ -164,7 +173,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 for attempt in range(1, max_retries + 1):
                     success = await update_image(ble_device, data.device, image, threshold, red_threshold)
                     if success:
-                        await data.last_update()
+                        image_coordinator.async_set_updated_data(image_bytes.getvalue())
                         break
 
                     _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
