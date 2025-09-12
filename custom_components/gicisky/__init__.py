@@ -99,21 +99,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         entry=entry,
     )
 
-    async def _async_poll_data(hass: HomeAssistant, entry: GiciskyConfigEntry,) -> SensorUpdate:
-        try:
-            coordinator = entry.runtime_data
-            return await coordinator.device_data.async_poll()
-        except Exception as err:
-            raise UpdateFailed(f"polling error: {err}") from err
-
-    poll_coordinator = DataUpdateCoordinator[SensorUpdate](
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-        update_method=partial(_async_poll_data, hass, entry),
-        update_interval=timedelta(hours=24),
-    )
-
     image_coordinator: DataUpdateCoordinator[bytes] = DataUpdateCoordinator(
         hass,
         _LOGGER,
@@ -124,14 +109,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         _LOGGER,
         name=DOMAIN,
     )
+    connectivity_coordinator: DataUpdateCoordinator[bool] = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+    )
     entry.runtime_data = bt_coordinator
-    entry.runtime_data.poll_coordinator = poll_coordinator
-    hass.data[DOMAIN][entry.entry_id]['poll_coordinator'] = poll_coordinator
     hass.data[DOMAIN][entry.entry_id]['image_coordinator'] = image_coordinator
     hass.data[DOMAIN][entry.entry_id]['preview_coordinator'] = preview_coordinator
-    await poll_coordinator.async_config_entry_first_refresh()
+    hass.data[DOMAIN][entry.entry_id]['connectivity_coordinator'] = connectivity_coordinator
+    connectivity_coordinator.async_set_updated_data(False)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
 
     @callback
     # callback for the draw custom service
@@ -149,9 +137,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 entry_id = await get_entry_id_from_device(hass, device_id)
                 address = hass.data[DOMAIN][entry_id]['address']
                 data = hass.data[DOMAIN][entry_id]['data']
-                coordinator = hass.data[DOMAIN][entry_id]['poll_coordinator']
                 image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
                 preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
+                connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
                 ble_device = async_ble_device_from_address(hass, address)
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
@@ -159,14 +147,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 image_bytes = BytesIO()
                 image.save(image_bytes, "PNG")
                 preview_coordinator.async_set_updated_data(image_bytes.getvalue())
-                                            
                 # If dry_run is True, skip sending to the actual device
                 if dry_run:
                     continue
 
                 max_retries = 3
-                await data.set_connected(True)
-                await coordinator.async_refresh()
+                connectivity_coordinator.async_set_updated_data(True)
                 for attempt in range(1, max_retries + 1):
                     success = await update_image(ble_device, data.device, image, threshold, red_threshold)
                     if success:
@@ -177,11 +163,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                     if attempt < max_retries:
                         await sleep(1)
                     else:
-                        await data.set_connected(False)
-                        await coordinator.async_refresh()
+                        connectivity_coordinator.async_set_updated_data(False)
                         raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
-                await data.set_connected(False)
-                await coordinator.async_refresh()
+                connectivity_coordinator.async_set_updated_data(False)
 
     # register the services
     hass.services.async_register(DOMAIN, "write", writeservice)

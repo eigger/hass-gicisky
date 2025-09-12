@@ -3,7 +3,6 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import cast
-from functools import partial
 from .gicisky_ble import SensorDeviceClass as GiciskySensorDeviceClass, SensorUpdate, Units
 from .gicisky_ble.const import (
     ExtendedSensorDeviceClass as GiciskyExtendedSensorDeviceClass,
@@ -467,9 +466,3 @@ class GiciskyBluetoothSensorEntity(
     def available(self) -> bool:
         """Return True if entity is available."""
         return super().available
-    
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        poll_coordinator = self.processor.coordinator.poll_coordinator
-        remove = poll_coordinator.async_add_listener(partial(self.processor.async_handle_update, poll_coordinator.data))
-        self.async_on_remove(remove)
