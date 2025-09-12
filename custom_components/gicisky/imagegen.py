@@ -614,12 +614,12 @@ def customimage(entity_id, device, service, hass):
         img = img.rotate(-rotate, expand=True)
     rgb_image = img.convert('RGB')
     patha = os.path.join(os.path.dirname(__file__), entity_id + '.jpg')
-    pathb = get_image_path(hass, entity_id)
-    pathc = get_image_folder(hass)
-    isExist = os.path.exists(pathc)
-    if not isExist:
-        os.makedirs(pathc)
-    rgb_image.save(pathb, format='JPEG', quality="maximum")
+    # pathb = get_image_path(hass, entity_id)
+    # pathc = get_image_folder(hass)
+    # isExist = os.path.exists(pathc)
+    # if not isExist:
+    #     os.makedirs(pathc)
+    # rgb_image.save(pathb, format='JPEG', quality="maximum")
     # shutil.copy2(patha,pathb)
 
     return rgb_image
