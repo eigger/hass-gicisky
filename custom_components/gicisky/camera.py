@@ -2,12 +2,13 @@
 import logging
 from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import DOMAIN
-from .coordinator import GiciskyPassiveBluetoothProcessorCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,55 +19,60 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Gicisky camera."""
-    coordinator: GiciskyPassiveBluetoothProcessorCoordinator = entry.runtime_data
-    async_add_entities([GiciskyCamera(coordinator)])
+    preview_coordinator = hass.data[DOMAIN][entry.entry_id]["preview_coordinator"]
+    async_add_entities([GiciskyCamera(hass, entry, preview_coordinator)])
 
 
-class GiciskyCamera(Camera):
+class GiciskyCamera(CoordinatorEntity[DataUpdateCoordinator[bytes]], Camera):
     """Gicisky Camera."""
-
-    _attr_has_entity_name = True
-    _attr_should_poll = False
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_supported_features = CameraEntityFeature.ON_OFF
 
-    def __init__(self, coordinator: GiciskyPassiveBluetoothProcessorCoordinator) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: DataUpdateCoordinator[bytes]) -> None:
         """Initialize the camera."""
-        super().__init__()
-        self.coordinator = coordinator
-        self._attr_unique_id = f"{coordinator.address}_displayed_content"
-        # Use the same device info pattern as event entities to ensure proper device association
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.address)},
-            connections={(dr.CONNECTION_BLUETOOTH, coordinator.address)},
-        )
-        self._attr_name = "Displayed content"
-        self._attr_is_on = False
+        CoordinatorEntity.__init__(self, coordinator)
+        Camera.__init__(self)
+        address = hass.data[DOMAIN][entry.entry_id]['address']
+        self._address = address
+        self._identifier = address.replace(":", "")[-8:]
+        self._attr_name = f"Gicisky {self._identifier} Preview Content"
+        self._attr_unique_id = f"gicisky_{self._identifier}_preview_content"
+        #self._attr_is_on = False
         self._image = None
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo (
+            connections = {
+                (
+                    CONNECTION_BLUETOOTH,
+                    self._address,
+                )
+            },
+            name = f"Gicisky {self._identifier}",
+            manufacturer = "Gicisky",
+        )
+    
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return the camera image."""
         return self._image
 
-    def set_image(self, image: bytes):
-        """Set the image."""
-        self._image = image
-        self._attr_is_on = True
-        self.async_write_ha_state()
+    # def turn_off(self) -> None:
+    #     """Turn the camera off."""
+    #     self._attr_is_on = False
+    #     self.async_write_ha_state()
 
-    def turn_off(self) -> None:
-        """Turn the camera off."""
-        self._attr_is_on = False
-        self.async_write_ha_state()
 
     @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self._attr_device_info
-
-    @property
-    def name(self) -> str:
-        """Return the name."""
-        return self._attr_name
+    def data(self) -> bytes:
+        """Return coordinator data for this entity."""
+        return self.coordinator.data
+            
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        _LOGGER.debug("Updated camera data")
+        self._image = self.data
+        super()._handle_coordinator_update()
