@@ -38,7 +38,8 @@ PLATFORMS: list[Platform] = [
     Platform.EVENT,
     Platform.SENSOR,
     Platform.CAMERA,
-    Platform.IMAGE
+    Platform.IMAGE,
+    Platform.TEXT
 ]
 
 _LOGGER = logging.getLogger(__name__)
