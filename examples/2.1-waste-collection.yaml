@@ -1,0 +1,126 @@
+action: gicisky.write
+metadata: {}
+data:
+  payload: |-
+    {% set sensor_text = states('sensor.upcoming_waste') %}
+    {% set days = ((sensor_text.split(' in ')[1]).split(' ')[0]) | int %}
+    {% set bins = sensor_text.split(' in ')[0].split(', ') %}
+    {% set day_letters = ['M','T','W','T','F','S','S'] %}
+    {% set today = now().weekday() %}
+    {% set bin_day = (today + days) % 7 %}
+    {% set icon_map = {
+      'Garden': '/config/www/images/waste/garden.png',
+      'Food': '/config/www/images/waste/food.png',
+      'Recycling': '/config/www/images/waste/recycling.png',
+      'General': '/config/www/images/waste/general.png',
+      'Glass': '/config/www/images/waste/glass.png'
+    } %}
+
+    [
+      {% if days in [0, 1] %}
+        {% set headline = 'Bin Day Today' if days == 0 else 'Bin Day Tomorrow' %}
+        {% set headline_x = 50 if days == 0 else 30 %}
+        
+        {% set action_text = 'Retrieve Bins' if days == 0 else 'PUT BINS OUT' %}
+        {% set action_x = 10 if days == 0 else 0 %}
+
+        {# Display if it's bin day today or tommorow #}
+        {
+          "type": "text", 
+          "value": "{{ headline}}", 
+          "x": {{ headline_x }}, 
+          "y": 0, 
+          "size": 22,
+          "color": "red"
+        },
+        {# Display a red rect at the bottom of the screen #}
+        {
+          "type": "rectangle", 
+          "x_start": 0, 
+          "y_start": 87, 
+          "y_end": 129,
+          "x_end": 250,
+          "fill": "red",
+          "outline": "red"
+        },
+        {# Display action text at bottom #}
+        {
+          "type": "text",
+          "value": "{{ action_text }}",
+          "x": {{ action_x }},
+          "y": 92,
+          "size": 30,
+          "color": "white",
+          "font": "fonts/GmarketSansTTFBold.ttf"
+        },
+      {% else %}
+        {# Display days until collection #}
+        {
+          "type": "text", 
+          "value": "Days until collection: {{ days }}",
+          "x": 10, 
+          "y": 0, 
+          "size": 22,
+          "color": "black"
+        },
+
+        {# Draw a filled rectangle around bin day #}
+        {% set bin_day_x = 0 + bin_day * 35 %}
+        {
+          "type": "rectangle", 
+          "x_start": {{ bin_day_x }} , 
+          "y_start": 88, 
+          "y_end": 120,
+          "x_end": {{ bin_day_x + 34 }},
+          "outline": "red",
+          "fill": "red"
+        },
+
+        {# Draw a rectangle around todays day #}
+        {% set today_x = 0 + today * 35 %}
+        {
+          "type": "rectangle", 
+          "x_start": {{ today_x }} , 
+          "y_start": 88, 
+          "y_end": 120,
+          "x_end": {{ today_x + 34 }},
+          "outline": "red",
+        },
+        {# Display day letters of the week #}
+        {% for day_num in range(7) %}
+          {
+            "type": "text",
+            "value": "{{ day_letters[day_num] }}",
+            "x": {{ 11 + day_num * 35 }},
+            "y": 97,
+            "size": 20,
+            "color": "{{ 'white' if day_num == bin_day else 'black' }}"
+          },
+        {% endfor %}
+      {% endif %}
+
+      {# Display a black line at the top #}
+      {
+        "type": "line",
+        "x_start": 0, 
+        "x_end": 250,
+        "y_start": 25,
+        "y_end": 25,
+        "fill": "black"
+      },
+
+      {# Centre and display the recycling icons in a row #}
+      {% set icons_x = ((250 - ((bins | length) * 50)) / 2) | int %}
+      {% for b in bins %}
+        {
+          "type": "dlimg",
+          "url": "{{ icon_map[b] }}",
+          "x": {{ icons_x + (loop.index0 * 50) }},
+          "y": 33,
+          "xsize": 48,
+          "ysize": 48
+        }{{ "," if not loop.last else "" }}
+      {% endfor %}
+    ]
+target:
+  device_id: ffbb9ecde7c689c28a57792f44a69cdf
