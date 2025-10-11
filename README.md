@@ -138,6 +138,7 @@ Remote Calendar -> Add google *.ics
 
 ## Third-Party Custom Components
 - [Naver Weather (minumida)](https://github.com/miumida/naver_weather.git)
+- [Waste Collection Schedule (mampfes)](https://github.com/mampfes/hacs_waste_collection_schedule.git)
   
 ## References
 - [ATC GICISKY ESL (atc1441)](https://github.com/atc1441/ATC_GICISKY_ESL.git)
