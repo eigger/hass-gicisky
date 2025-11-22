@@ -46,6 +46,7 @@ repository into the `custom_components/gicisky` directory.
 | 2.1" (250x128) | Wifi | ![2.1-wifi.jpg](./examples/2.1-wifi.jpg) | [2.1" Wifi](./examples/2.1-wifi.yaml) |
 | 2.1" (250x128) | TMap time | ![2.1-tmap-time.jpg](./examples/2.1-tmap-time.jpg) | [2.1" TMap time](./examples/2.1-tmap-time.yaml) |
 | 2.9" (296x128) | Google Calendar | ![2.9-google-calendar.jpg](./examples/2.9-google-calendar.jpg) | [2.9" Google Calendar](./examples/2.9-google-calendar.yaml) |
+| 2.9" (296x128) | Presence Display | ![2.9-presence-display.jpg](./examples/2.9-presence-display.jpg) | [2.9" Presence Display](./examples/2.9-presence-display.yaml) |
 | 4.2" (400x300) | Image | ![4.2-image.jpg](./examples/4.2-image.jpg) | [4.2" Image](./examples/4.2-image.yaml) |
 | 4.2" (400x300) | Naver Weather | ![4.2-naver-weather.jpg](./examples/4.2-naver-weather.jpg) | [4.2" Naver Weather](./examples/4.2-naver-weather.yaml) |
 | 4.2" (400x300) | Date Weather | ![4.2-date-weather.jpg](./examples/4.2-date-weather.jpg) | [4.2" Date Weather](./examples/4.2-date-weather.yaml) |
