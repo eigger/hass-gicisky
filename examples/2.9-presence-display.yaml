@@ -1,0 +1,87 @@
+action: gicisky.write
+target:
+  device_id: ffbb9ecde7c689c28a57792f44a69cdf
+data:
+  background: white
+  payload: |-
+    {% set ns = namespace(elements=[]) %}
+
+    {# Configuration Variables #}
+    {% set elements_per_line = 3 %}
+    {% set element_width = 90 %}
+    {% set element_spacing = 8 %}
+    {% set line_height = 60 %}
+    {% set x_offset = 5 %}
+
+    {# Static Y Coordinates for the first line #}
+    {% set base_y_start = 10 %}
+    {% set base_y_end = base_y_start + 50 %}
+    {% set base_icon_y = base_y_start + 5 %}
+    {% set base_text_y = base_y_start + 30 %}
+
+
+    {% for person in states.person -%}
+      {%- set person_name = person.attributes.friendly_name %}
+      {%- set is_home = person.state == 'home' %}
+      {%- set fill_color = 'black' if is_home else 'red' %}
+      {%- set icon = 'mdi:home' if is_home else 'mdi:airplane' %}
+      
+      {# loop.index0 starts at 0, loop.index starts at 1 #}
+      {%- set index = loop.index0 %}
+
+      {# 🔄 Calculate Row and Column #}
+      {% set row = (index / elements_per_line) | int %}
+      {% set col = index % elements_per_line %}
+
+      {# 1. Calculate Y Coordinates (Vertical Position) #}
+      {% set y_shift = row * line_height %}
+      {% set y_start = base_y_start + y_shift %}
+      {% set y_end = base_y_end + y_shift %}
+      {% set icon_y = base_icon_y + y_shift %}
+      {% set text_y = base_text_y + y_shift %}
+
+      {# 2. Calculate X Coordinates (Horizontal Position) #}
+      {# X depends only on the column (col) within the row #}
+      {% set x_start = x_offset + (col * element_width) + (col * element_spacing) %}
+      {% set x_end = x_start + element_width %}
+      {% set x_center = x_start + (element_width / 2) %}
+
+      {# Define the three element dictionaries #}
+      {% set rectangle = {
+        'type': 'rectangle',
+        'x_start': x_start,
+        'y_start': y_start,
+        'x_end': x_end,
+        'y_end': y_end,
+        'anchor': 'mt',
+        'fill': fill_color,
+        'outline': 'red' if not is_home else 'black',
+        'width': 1,
+        'radius': 10
+      } %}
+
+      {% set icon_element = {
+        'type': 'icon',
+        'value': icon,
+        'color': 'white',
+        'x': x_center,
+        'y': icon_y,
+        'anchor': 'mt',
+        'size': 25
+      } %}
+
+      {% set text_element = {
+        'type': 'text',
+        'value': person_name,
+        'color': 'white',
+        'x': x_center,
+        'y': text_y,
+        'anchor': 'mt',
+        'size': 17
+      } %}
+
+      {% set ns.elements = ns.elements + [rectangle, icon_element, text_element] %}
+
+    {%- endfor %}
+
+    {{ ns.elements }}
