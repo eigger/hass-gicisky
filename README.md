@@ -1,6 +1,49 @@
 # hass-gicisky
 Gicisky BLE Label Home Assistant Integration
 
+## Gallery
+| Size | Example |
+|------|---------|
+| 2.1" (250x128) | <img src="./docs/images/21_1.png" alt="2.1 inch" width="200" /> |
+| 2.9" (296x128) | <img src="./docs/images/29_1.png" alt="2.9 inch" width="200" /> |
+| 4.2" (400x300) | <img src="./docs/images/42_1.png" alt="4.2 inch" width="200" /> |
+
+## What Is an Electronic Label?
+
+An **Electronic Label** (also known as an **Electronic Shelf Label, ESL**) is a small display device that uses  
+**electronic paper (e-paper)** instead of traditional paper.
+
+Once content is displayed, it remains visible **without consuming power**,  
+making electronic labels extremely energy-efficient and well suited for always-on information display.
+
+This project uses electronic labels manufactured by **Gicisky**.
+
+## Key Characteristics
+
+- 📄 **E-paper display**
+  - Paper-like appearance with excellent readability
+- 🔋 **Ultra-low power consumption**
+  - Power is only used when the display is updated
+- 📡 **Wireless communication**
+  - Display content can be updated remotely
+- 📐 **Compact and lightweight**
+  - Easy to mount on walls, shelves, doors, or devices
+
+Although electronic labels are commonly associated with retail price tags,  
+their core value lies in being **small, persistent, and power-efficient displays**.
+
+## Why Electronic Labels?
+
+Electronic labels are ideal for displaying information that:
+
+- Needs to be visible at all times
+- Does not change frequently
+- Must be shown in locations where continuous power is impractical
+
+This project focuses on these fundamental characteristics and explores electronic labels  
+beyond their traditional use cases.
+
+
 ## 💬 Feedback & Support
 
 🐞 Found a bug? Let us know via an [Issue](https://github.com/eigger/hass-gicisky/issues).  
@@ -42,7 +85,7 @@ repository into the `custom_components/gicisky` directory.
 |------|---------|---------|------|
 | 2.1" (250x128) | Date | ![2.1-date.jpg](./examples/2.1-date.jpg) | [2.1" Date](./examples/2.1-date.yaml) |
 | 2.1" (250x128) | Naver Weather | ![2.1-naver-weather.jpg](./examples/2.1-naver-weather.jpg) | [2.1" Naver Weather](./examples/2.1-naver-weather.yaml) |
- 2.1" (250x128) | Waste Collection | ![2.1-waste-collection.png](./examples/2.1-waste-collection.png) | [2.1" Waste Collection](./examples/2.1-waste-collection.yaml) |
+| 2.1" (250x128) | Waste Collection | ![2.1-waste-collection.png](./examples/2.1-waste-collection.png) | [2.1" Waste Collection](./examples/2.1-waste-collection.yaml) |
 | 2.1" (250x128) | Wifi | ![2.1-wifi.jpg](./examples/2.1-wifi.jpg) | [2.1" Wifi](./examples/2.1-wifi.yaml) |
 | 2.1" (250x128) | TMap time | ![2.1-tmap-time.jpg](./examples/2.1-tmap-time.jpg) | [2.1" TMap time](./examples/2.1-tmap-time.yaml) |
 | 2.9" (296x128) | Google Calendar | ![2.9-google-calendar.jpg](./examples/2.9-google-calendar.jpg) | [2.9" Google Calendar](./examples/2.9-google-calendar.yaml) |
