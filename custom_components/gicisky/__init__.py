@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from functools import partial
 import logging
+import time
+import asyncio
 from asyncio import sleep, Lock
 from io import BytesIO
 
@@ -100,12 +102,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         _LOGGER,
         name=DOMAIN,
     )
+    duration_coordinator: DataUpdateCoordinator[float] = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+    )
     entry.runtime_data = bt_coordinator
     hass.data[DOMAIN][entry.entry_id]['image_coordinator'] = image_coordinator
     hass.data[DOMAIN][entry.entry_id]['preview_coordinator'] = preview_coordinator
     hass.data[DOMAIN][entry.entry_id]['connectivity_coordinator'] = connectivity_coordinator
+    hass.data[DOMAIN][entry.entry_id]['duration_coordinator'] = duration_coordinator
+    hass.data[DOMAIN][entry.entry_id]['duration_task'] = None
+    hass.data[DOMAIN][entry.entry_id]['start_time'] = None
     connectivity_coordinator.async_set_updated_data(False)
+    duration_coordinator.async_set_updated_data(0.0)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    async def update_duration_loop(entry_id: str):
+        """Background task to update duration every second."""
+        while True:
+            start_time = hass.data[DOMAIN][entry_id].get('start_time')
+            if start_time is not None:
+                elapsed = round(time.monotonic() - start_time, 1)
+                hass.data[DOMAIN][entry_id]['duration_coordinator'].async_set_updated_data(elapsed)
+            await asyncio.sleep(1)
 
     @callback
     # callback for the draw custom service
@@ -126,6 +146,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
                 preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
                 connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
+                duration_coordinator = hass.data[DOMAIN][entry_id]['duration_coordinator']
                 ble_device = async_ble_device_from_address(hass, address)
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
@@ -138,20 +159,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                     continue
 
                 max_retries = 3
+                # Start duration tracking
+                hass.data[DOMAIN][entry_id]['start_time'] = time.monotonic()
+                duration_coordinator.async_set_updated_data(0.0)
                 connectivity_coordinator.async_set_updated_data(True)
-                for attempt in range(1, max_retries + 1):
-                    success = await update_image(ble_device, data.device, image, threshold, red_threshold)
-                    if success:
-                        image_coordinator.async_set_updated_data(image_bytes.getvalue())
-                        break
+                
+                # Start background task to update duration
+                duration_task = asyncio.create_task(update_duration_loop(entry_id))
+                hass.data[DOMAIN][entry_id]['duration_task'] = duration_task
+                
+                try:
+                    for attempt in range(1, max_retries + 1):
+                        success = await update_image(ble_device, data.device, image, threshold, red_threshold)
+                        if success:
+                            image_coordinator.async_set_updated_data(image_bytes.getvalue())
+                            break
 
-                    _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
-                    if attempt < max_retries:
-                        await sleep(1)
-                    else:
-                        connectivity_coordinator.async_set_updated_data(False)
-                        raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
-                connectivity_coordinator.async_set_updated_data(False)
+                        _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
+                        if attempt < max_retries:
+                            await sleep(1)
+                        else:
+                            raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
+                finally:
+                    # Stop duration tracking
+                    duration_task.cancel()
+                    try:
+                        await duration_task
+                    except asyncio.CancelledError:
+                        pass
+                    
+                    # Update final elapsed time
+                    start_time = hass.data[DOMAIN][entry_id].get('start_time')
+                    if start_time is not None:
+                        elapsed_time = round(time.monotonic() - start_time, 2)
+                        duration_coordinator.async_set_updated_data(elapsed_time)
+                    
+                    hass.data[DOMAIN][entry_id]['start_time'] = None
+                    hass.data[DOMAIN][entry_id]['duration_task'] = None
+                    connectivity_coordinator.async_set_updated_data(False)
 
     # register the services
     hass.services.async_register(DOMAIN, "write", writeservice)

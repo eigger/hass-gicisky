@@ -3,6 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import cast
+import logging
 from .gicisky_ble import SensorDeviceClass as GiciskySensorDeviceClass, SensorUpdate, Units
 from .gicisky_ble.const import (
     ExtendedSensorDeviceClass as GiciskyExtendedSensorDeviceClass,
@@ -42,13 +43,20 @@ from homeassistant.const import (
     UnitOfVolume,
     UnitOfVolumeFlowRate,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
+from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from propcache.api import cached_property
 
 from .coordinator import GiciskyPassiveBluetoothDataProcessor
 from .device import device_key_to_bluetooth_entity_key
 from .types import GiciskyConfigEntry
+from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 SENSOR_DESCRIPTIONS = {
     # Acceleration (m/s²)
@@ -447,6 +455,10 @@ async def async_setup_entry(
         coordinator.async_register_processor(processor, SensorEntityDescription)
     )
 
+    # Add Duration sensor
+    duration_coordinator = hass.data[DOMAIN][entry.entry_id]["duration_coordinator"]
+    async_add_entities([GiciskyDurationSensorEntity(hass, entry, duration_coordinator)])
+
 
 class GiciskyBluetoothSensorEntity(
     PassiveBluetoothProcessorEntity[GiciskyPassiveBluetoothDataProcessor[float | None]],
@@ -466,3 +478,61 @@ class GiciskyBluetoothSensorEntity(
     def available(self) -> bool:
         """Return True if entity is available."""
         return super().available
+
+
+class GiciskyDurationSensorEntity(
+    CoordinatorEntity[DataUpdateCoordinator[float]],
+    SensorEntity,
+):
+    """Representation of a Gicisky BLE write duration sensor."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        coordinator: DataUpdateCoordinator[float],
+    ) -> None:
+        """Initialize the duration sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        address = hass.data[DOMAIN][entry.entry_id]["address"]
+        self._address = address
+        self._identifier = address.replace(":", "")[-8:]
+        self._attr_name = f"Gicisky {self._identifier} Write Duration"
+        self._attr_unique_id = f"gicisky_{self._identifier}_write_duration"
+        self._native_value: float = 0.0
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the native value."""
+        return self._native_value
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            connections={(CONNECTION_BLUETOOTH, self._address)},
+            name=f"Gicisky {self._identifier}",
+            manufacturer="Gicisky",
+        )
+
+    @cached_property
+    def available(self) -> bool:
+        """Entity always available."""
+        return True
+
+    @property
+    def data(self) -> float:
+        """Return coordinator data for this entity."""
+        return self.coordinator.data
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        _LOGGER.debug("Updated duration data: %s", self.data)
+        self._native_value = self.data
+        super()._handle_coordinator_update()
+
