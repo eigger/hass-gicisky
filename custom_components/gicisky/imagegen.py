@@ -74,7 +74,7 @@ def should_show_element(element):
 def get_font_file(font_name, hass):
     font_file = os.path.join(os.path.dirname(__file__), font_name)
     _LOGGER.debug(f"Font => font_name: {font_name} first checking for default font_file: {font_file}")
-    if not font_file:
+    if not os.path.exists(font_file):
         _LOGGER.debug(f"Font => font_name: {font_name} not found in default package")
         www_fonts_dir = hass.config.path("www/fonts")
         if os.path.exists(www_fonts_dir):
@@ -224,8 +224,8 @@ def customimage(entity_id, device, service, hass):
             # ttf from https://github.com/Templarian/MaterialDesign-Webfont/blob/master/fonts/materialdesignicons-webfont.ttf
             font_file = os.path.join(os.path.dirname(__file__), 'fonts/materialdesignicons-webfont.ttf')
             meta_file = os.path.join(os.path.dirname(__file__), "fonts/materialdesignicons-webfont_meta.json") 
-            f = open(meta_file)
-            data = json.load(f)
+            with open(meta_file) as f:
+                data = json.load(f)
             chr_hex = ""
             value = element['value']
             if value.startswith("mdi:"):

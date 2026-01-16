@@ -6,7 +6,7 @@ from functools import partial
 import logging
 from asyncio import sleep, Lock
 from io import BytesIO
-from datetime import timedelta
+
 from .imagegen import *
 from .gicisky_ble import GiciskyBluetoothDeviceData, SensorUpdate
 from .gicisky_ble.writer import update_image
@@ -25,17 +25,14 @@ from homeassistant.util.signal_type import SignalType
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
-    CONF_DISCOVERED_EVENT_CLASSES,
     DOMAIN,
     LOCK,
-    GiciskyBleEvent,
 )
 from .coordinator import GiciskyPassiveBluetoothProcessorCoordinator
 from .types import GiciskyConfigEntry
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
-    Platform.EVENT,
     Platform.SENSOR,
     Platform.CAMERA,
     Platform.IMAGE,
@@ -58,16 +55,6 @@ def process_service_info(
     return update
 
 
-def format_event_dispatcher_name(
-    address: str, event_class: str
-) -> SignalType[GiciskyBleEvent]:
-    """Format an event dispatcher name."""
-    return SignalType(f"{DOMAIN}_event_{address}_{event_class}")
-
-
-def format_discovered_event_class(address: str) -> SignalType[str, GiciskyBleEvent]:
-    """Format a discovered event class."""
-    return SignalType(f"{DOMAIN}_discovered_event_class_{address}")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> bool:
@@ -87,7 +74,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         hass.data[DOMAIN][LOCK] = Lock()
 
     device_registry = dr.async_get(hass)
-    event_classes = set(entry.data.get(CONF_DISCOVERED_EVENT_CLASSES, ()))
     bt_coordinator = GiciskyPassiveBluetoothProcessorCoordinator(
         hass,
         _LOGGER,
@@ -95,7 +81,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         mode=BluetoothScanningMode.PASSIVE,
         update_method=partial(process_service_info, hass, entry, device_registry),
         device_data=data,
-        discovered_event_classes=event_classes,
         connectable=True,
         entry=entry,
     )
@@ -178,6 +163,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> bool:
     """Unload a config entry."""
+    hass.services.async_remove(DOMAIN, "write")
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 async def get_entry_id_from_device(hass, device_id: str) -> str:
