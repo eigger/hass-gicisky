@@ -44,7 +44,7 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         return None
 
     def _parse_gicisky(
-        self, service_info: BluetoothServiceInfo, data: bytes
+        self, service_info: BluetoothServiceInfoBleak, data: bytes
     ) -> bool:
         """Parser for Gicisky sensors"""
         if len(data) != 5:
@@ -52,7 +52,7 @@ class GiciskyBluetoothDeviceData(BluetoothData):
 
         # determine the device type
         device_id = data[0]
-        bettery = data[1]
+        battery = data[1]
         firmware = (data[2] << 8) + data[3]
         hardware = (data[0] << 8) + data[4]
         try:
@@ -71,7 +71,7 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         self.set_device_sw_version(f"0x{firmware:04X}")
         self.set_device_hw_version(f"0x{hardware:04X}")
 
-        volt = bettery / 10
+        volt = battery / 10
         min = device.min_voltage
         max = device.max_voltage
         batt = (volt - min) * 100 / (max - min)
