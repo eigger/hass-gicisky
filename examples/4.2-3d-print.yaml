@@ -1,0 +1,64 @@
+alias: A1 Mini Running E-Paper
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.a1_mini_print_status
+    to:
+      - running
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+conditions: []
+actions:
+  - action: image.snapshot
+    metadata: {}
+    target:
+      entity_id: image.a1_mini_cover_image
+    data:
+      filename: /config/www/tmp/a1mini.png
+  - action: pyscript.dither_a1
+    metadata: {}
+    data: {}
+  - action: gicisky.write
+    metadata: {}
+    target:
+      device_id: eaaaa4ab9ce57b23f38834530adc5493
+    data:
+      payload:
+        - type: dlimg
+          url: /config/www/tmp/a1minibw.png
+          x: 80
+          "y": 34
+          xsize: 240
+          ysize: 240
+          rotate: 0
+        - type: text
+          font: fonts/CookieRunBlack.ttf
+          x: 200
+          "y": 19
+          size: 32
+          anchor: mm
+          value: 3D PRINT IN PROGRESS
+        - type: text
+          x: 200
+          "y": 286
+          size: 18
+          anchor: mm
+          font: fonts/CookieRunRegular.ttf
+          value: "ESTIMATED FINISH:  {{states('sensor.a1_mini_end_time') }}"
+mode: single
+
+from PIL import Image
+@service()
+def dither_a1():
+    image_file = Image.open("/config/www/tmp/a1mini.png")
+    bbox = image_file.getbbox()
+    image_file = image_file.crop(bbox)
+    image_file.save('/config/www/tmp/a1minipre.png')
+    image_file.thumbnail((240,240))
+    bg_image = Image.new("RGB", (240,240), (255,255,255))
+    bg_image.paste(image_file,image_file)
+    bg_image = bg_image.convert('1') 
+    bg_image.save('/config/www/tmp/a1minibw.png')
