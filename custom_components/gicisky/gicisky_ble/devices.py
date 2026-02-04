@@ -63,11 +63,11 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
     0x8B: DeviceEntry(
         name="EPD 102",
         model="EPD 10.2\" BWR",
-        width=800,
-        height=480,
+        width=960,
+        height=640,
         mirror_y=True,
         compression=True,
-        max_voltage=3.0
+        max_voltage=2.9
     ),
 }
 # 비트7	비트6	비트5	비트4	비트3	비트2	비트1	비트0
