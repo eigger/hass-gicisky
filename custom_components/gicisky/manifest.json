@@ -7,13 +7,18 @@
       "connectable": true
     }
   ],
-  "codeowners": ["@eigger"],
+  "codeowners": [
+    "@eigger"
+  ],
   "config_flow": true,
-  "dependencies": ["bluetooth_adapters", "camera"],
+  "dependencies": [
+    "bluetooth_adapters",
+    "camera"
+  ],
   "documentation": "https://github.com/eigger/hass-gicisky",
   "issue_tracker": "https://github.com/eigger/hass-gicisky/issues",
   "iot_class": "local_push",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "requirements": [
     "qrcode[pil]==7.4.2",
     "python-barcode==0.15.1"

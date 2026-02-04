@@ -60,6 +60,15 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         compression=True,
         max_voltage=3.0
     ),
+    0x8B: DeviceEntry(
+        name="EPD 102",
+        model="EPD 10.2\" BWR",
+        width=800,
+        height=480,
+        mirror_y=True,
+        compression=True,
+        max_voltage=3.0
+    ),
 }
 # 비트7	비트6	비트5	비트4	비트3	비트2	비트1	비트0
 # 픽셀3	픽셀2	픽셀1	메뉴2	메뉴1	색상2	색상1	이미지 유형
