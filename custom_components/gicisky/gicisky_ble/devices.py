@@ -66,7 +66,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=960,
         height=640,
         compression=True,
-        max_voltage=2.9
+        max_voltage=3.0
     ),
 }
 # 비트7	비트6	비트5	비트4	비트3	비트2	비트1	비트0
