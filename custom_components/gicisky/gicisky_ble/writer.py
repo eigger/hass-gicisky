@@ -100,6 +100,7 @@ class GiciskyClient:
         self.mirror_x = device.mirror_x
         self.mirror_y = device.mirror_y
         self.compression = device.compression
+        self.invert_luminance = device.invert_luminance
         self.packet_size = 0 #(device.width * device.height) // 8 * (2 if device.red else 1)
         self.event: Event = Event()
         self.command_data: bytes | None = None
@@ -262,7 +263,10 @@ class GiciskyClient:
                 r, g, b = pixels[px]
 
                 luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-                if self.compression:
+                if self.invert_luminance:
+                    if luminance > threshold:
+                        current_byte |= (1 << bit_pos)
+                elif self.compression:
                     if luminance < threshold:
                         current_byte |= (1 << bit_pos)
                 else:
