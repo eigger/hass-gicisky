@@ -170,7 +170,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 
                 try:
                     for attempt in range(1, max_retries + 1):
-                        success = await update_image(ble_device, data.device, image, threshold, red_threshold)
+                        success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt)
                         if success:
                             image_coordinator.async_set_updated_data(image_bytes.getvalue())
                             break

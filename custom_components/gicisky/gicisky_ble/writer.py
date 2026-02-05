@@ -44,7 +44,8 @@ async def update_image(
     device: DeviceEntry,
     image: Image,
     threshold: int,
-    red_threshold: int
+    red_threshold: int,
+    attempt: int = 1
 ) -> bool:
     client: BleakClient | None = None
     try:
@@ -58,7 +59,7 @@ async def update_image(
         if len(char_uuids) < 2:
             raise BleakServiceMissing(f"UUID Len: {len(char_uuids)}")
         sorted_uuids = sorted(char_uuids, key=lambda x: int(x[4:8], 16))
-        gicisky = GiciskyClient(client, sorted_uuids, device)
+        gicisky = GiciskyClient(client, sorted_uuids, device, attempt)
         await gicisky.start_notify()
         success = await gicisky.write_image(image, threshold, red_threshold)
         try:
@@ -88,9 +89,11 @@ class GiciskyClient:
         self,
         client: BleakClient,
         uuids: list[str],
-        device: DeviceEntry
+        device: DeviceEntry,
+        attempt: int = 1
     ) -> None:
         self.client = client
+        self.attempt = attempt
         self.cmd_uuid, self.img_uuid = uuids[:2]
         self.width = device.width
         self.height = device.height
@@ -117,11 +120,19 @@ class GiciskyClient:
 
     @disconnect_on_missing_services
     async def write(self, uuid: str, data: bytes, response = False) -> None:
-        _LOGGER.debug("Write UUID=%s data=%s", uuid, len(data))
+        _LOGGER.debug("Write UUID=%s data=%s attempt=%s", uuid, len(data), self.attempt)
         chunk = len(data)
+        
+        delay = 0
+        if self.attempt == 2:
+            delay = 0.05
+        elif self.attempt >= 3:
+            delay = 1.0
+
         for i in range(0, len(data), chunk):
             await self.client.write_gatt_char(uuid, data[i : i + chunk], response)
-            #await sleep(0.05)
+            if delay > 0:
+                await sleep(delay)
 
     def _notification_handler(self, _: Any, data: bytearray) -> None:
         if self.command_data is None:
@@ -169,7 +180,8 @@ class GiciskyClient:
     
     async def write_image(self, image: Image, threshold: int, red_threshold: int) -> None:
         part = 0
-        count = 0
+        last_part = -1
+        same_part_count = 0
         status = self.Status.START
         self.image_packets = self._make_image_packet(image, threshold, red_threshold)
         self.packet_size = len(self.image_packets)
@@ -197,10 +209,17 @@ class GiciskyClient:
                     data = await self.write_image_with_response(part)
                     if len(data) < 6 or data[0] != 0x05 or data[1] != 0x00:
                         break
-                    part = int.from_bytes(data[2:6], "little")
-                    count += 1
-                    if part != count:
-                        raise Exception(f"Count Error: {part} {count}")
+                    new_part = int.from_bytes(data[2:6], "little")
+                    
+                    # Check for consecutive identical part values
+                    if new_part == last_part:
+                        same_part_count += 1
+                        if same_part_count >= 3:
+                            raise Exception(f"Part stalled: part={new_part} repeated 3 times")
+                    else:
+                        same_part_count = 1
+                        last_part = new_part
+                    part = new_part
                 else:
                     raise Exception(f"Status Error: {status}")
             return True
