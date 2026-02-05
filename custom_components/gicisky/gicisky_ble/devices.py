@@ -13,6 +13,7 @@ class DeviceEntry:
     mirror_y: bool = False
     rotation: int = 0
     compression: bool = False
+    invert_luminance: bool = False
     manufacturer: str = "Gicisky"
     max_voltage: float = 2.9
     min_voltage: float = 2.2
@@ -65,7 +66,8 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         model="EPD 10.2\" BWR",
         width=960,
         height=640,
-        #compression=True,
+        compression=True,
+        invert_luminance=True,
         max_voltage=3.0
     ),
 }
