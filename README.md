@@ -79,6 +79,19 @@ repository into the `custom_components/gicisky` directory.
   bluetooth_proxy:
     active: true
 
+## Options
+
+After adding a device, you can configure the following options via **Settings > Devices & Services > Gicisky > Configure**:
+
+| Option | Default | Range | Description |
+|--------|---------|-------|-------------|
+| **Retry Count** | 3 | 1-10 | Number of retry attempts when BLE write fails |
+| **Write Delay (ms)** | 0 | 0-1000 | Delay in milliseconds between each BLE write operation |
+
+> [!TIP]
+> If you experience frequent write failures, try increasing the **Retry Count**.  
+> If writes are unstable, try setting **Write Delay** to 50-100ms to give the device more time to process each packet.
+
 
 ## Examples
 | Size | Example | Preview | Yaml |
