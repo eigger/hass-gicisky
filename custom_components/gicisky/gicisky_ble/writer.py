@@ -45,7 +45,8 @@ async def update_image(
     image: Image,
     threshold: int,
     red_threshold: int,
-    attempt: int = 1
+    attempt: int = 1,
+    write_delay_ms: int = 0
 ) -> bool:
     client: BleakClient | None = None
     try:
@@ -59,7 +60,7 @@ async def update_image(
         if len(char_uuids) < 2:
             raise BleakServiceMissing(f"UUID Len: {len(char_uuids)}")
         sorted_uuids = sorted(char_uuids, key=lambda x: int(x[4:8], 16))
-        gicisky = GiciskyClient(client, sorted_uuids, device, attempt)
+        gicisky = GiciskyClient(client, sorted_uuids, device, attempt, write_delay_ms)
         await gicisky.start_notify()
         success = await gicisky.write_image(image, threshold, red_threshold)
         try:
@@ -90,10 +91,12 @@ class GiciskyClient:
         client: BleakClient,
         uuids: list[str],
         device: DeviceEntry,
-        attempt: int = 1
+        attempt: int = 1,
+        write_delay_ms: int = 0
     ) -> None:
         self.client = client
         self.attempt = attempt
+        self.write_delay_ms = write_delay_ms
         self.cmd_uuid, self.img_uuid = uuids[:2]
         self.width = device.width
         self.height = device.height
@@ -120,15 +123,10 @@ class GiciskyClient:
 
     @disconnect_on_missing_services
     async def write(self, uuid: str, data: bytes, response = False) -> None:
-        _LOGGER.debug("Write UUID=%s data=%s attempt=%s", uuid, len(data), self.attempt)
         chunk = len(data)
-        
-        delay = 0
-        if self.attempt == 2:
-            delay = 0.05
-        elif self.attempt >= 3:
-            delay = 1.0
-
+        delay = self.write_delay_ms / 1000.0  # Convert ms to seconds
+        delay += (0.05 * (self.attempt - 1))
+        _LOGGER.debug("Write UUID=%s data=%s attempt=%s delay=%s", uuid, len(data), self.attempt, delay)
         for i in range(0, len(data), chunk):
             await self.client.write_gatt_char(uuid, data[i : i + chunk], response)
             if delay > 0:
