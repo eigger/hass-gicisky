@@ -283,9 +283,6 @@ class GiciskyClient:
 
                 luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
                 if self.invert_luminance:
-                    if luminance > threshold:
-                        current_byte |= (1 << bit_pos)
-                elif self.compression:
                     if luminance < threshold:
                         current_byte |= (1 << bit_pos)
                 else:

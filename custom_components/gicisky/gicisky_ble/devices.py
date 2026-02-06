@@ -59,6 +59,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         height=480,
         mirror_y=True,
         compression=True,
+        invert_luminance=True,
         max_voltage=3.0
     ),
     0x8B: DeviceEntry(
@@ -67,7 +68,6 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=960,
         height=640,
         compression=True,
-        invert_luminance=True,
         max_voltage=3.0
     ),
 }
