@@ -14,10 +14,48 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    SOURCE_REAUTH,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ADDRESS
+from homeassistant.core import callback
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_RETRY_COUNT,
+    CONF_WRITE_DELAY_MS,
+    DEFAULT_RETRY_COUNT,
+    DEFAULT_WRITE_DELAY_MS,
+)
+
+
+OPTIONS_SCHEMA = {
+    vol.Required(CONF_RETRY_COUNT, default=DEFAULT_RETRY_COUNT): NumberSelector(
+        NumberSelectorConfig(
+            min=1,
+            max=10,
+            step=1,
+            mode=NumberSelectorMode.BOX,
+        )
+    ),
+    vol.Required(CONF_WRITE_DELAY_MS, default=DEFAULT_WRITE_DELAY_MS): NumberSelector(
+        NumberSelectorConfig(
+            min=0,
+            max=1000,
+            step=1,
+            mode=NumberSelectorMode.BOX,
+            unit_of_measurement="ms",
+        )
+    ),
+}
 
 
 @dataclasses.dataclass
@@ -129,6 +167,11 @@ class GiciskyConfigFlow(ConfigFlow, domain=DOMAIN):
         # Otherwise there wasn't actually encryption so abort
         return self.async_abort(reason="reauth_successful")
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return OptionsFlowHandler()
+
     def _async_get_or_create_entry(
         self, bindkey: str | None = None
     ) -> ConfigFlowResult:
@@ -144,4 +187,23 @@ class GiciskyConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=self.context["title_placeholders"]["name"],
             data=data,
+        )
+
+
+class OptionsFlowHandler(OptionsFlowWithReload):
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        # options가 비어있으면 data에서 가져옴
+        suggested_values = {**self.config_entry.data, **self.config_entry.options}
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(OPTIONS_SCHEMA), suggested_values
+            ),
         )

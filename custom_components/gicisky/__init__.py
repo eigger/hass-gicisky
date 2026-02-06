@@ -29,6 +29,10 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import (
     DOMAIN,
     LOCK,
+    CONF_RETRY_COUNT,
+    CONF_WRITE_DELAY_MS,
+    DEFAULT_RETRY_COUNT,
+    DEFAULT_WRITE_DELAY_MS,
 )
 from .coordinator import GiciskyPassiveBluetoothProcessorCoordinator
 from .types import GiciskyConfigEntry
@@ -141,6 +145,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             # Process each device
             for device_id in device_ids:
                 entry_id = await get_entry_id_from_device(hass, device_id)
+                config_entry = hass.config_entries.async_get_entry(entry_id)
+                options = {**config_entry.data, **config_entry.options}
+                max_retries = int(options.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT))
+                write_delay_ms = int(options.get(CONF_WRITE_DELAY_MS, DEFAULT_WRITE_DELAY_MS))
                 address = hass.data[DOMAIN][entry_id]['address']
                 data = hass.data[DOMAIN][entry_id]['data']
                 image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
@@ -158,7 +166,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 if dry_run:
                     continue
 
-                max_retries = 3
                 # Start duration tracking
                 hass.data[DOMAIN][entry_id]['start_time'] = time.monotonic()
                 duration_coordinator.async_set_updated_data(0.0)
@@ -170,7 +177,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 
                 try:
                     for attempt in range(1, max_retries + 1):
-                        success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt)
+                        success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt, write_delay_ms=write_delay_ms)
                         if success:
                             image_coordinator.async_set_updated_data(image_bytes.getvalue())
                             break
