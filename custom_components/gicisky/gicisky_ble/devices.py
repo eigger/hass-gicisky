@@ -17,6 +17,7 @@ class DeviceEntry:
     manufacturer: str = "Gicisky"
     max_voltage: float = 2.9
     min_voltage: float = 2.2
+    four_color: bool = False
 
 DEVICE_TYPES: dict[int, DeviceEntry] = {
     0xA0: DeviceEntry(
@@ -44,6 +45,23 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         height=128,
         rotation=90,
         max_voltage=3.0
+    ),
+    0x2E: DeviceEntry(
+        name="EPD 29",
+        model="EPD 2.9\" BWRY",
+        width=296,
+        height=128,
+        rotation=90,
+        max_voltage=3.0,
+        four_color=True,
+    ),
+    0x4E: DeviceEntry(
+        name="EPD 42",
+        model="EPD 4.2\" BWRY",
+        width=400,
+        height=300,
+        max_voltage=3.0,
+        four_color=True,
     ),
     0x4B: DeviceEntry(
         name="EPD 42",
