@@ -326,10 +326,10 @@ class GiciskyClient:
                 r, g, b = pixels[(x, y)]
                 
                 # Logic from r.java
-                is_white = (((r * 38) + (g * 75) + (b * 15)) >> 7) > 128
-                is_red = r > 128
-                is_green = g > 128
-                is_blue = b > 128
+                is_white = (((r * 38) + (g * 75) + (b * 15)) >> 7) > threshold
+                is_red = r > red_threshold
+                is_green = g > red_threshold
+                is_blue = b > red_threshold
                 
                 if is_green and is_red and is_blue:
                    is_green = False
