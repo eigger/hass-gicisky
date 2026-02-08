@@ -107,6 +107,7 @@ class GiciskyClient:
         self.mirror_y = device.mirror_y
         self.compression = device.compression
         self.invert_luminance = device.invert_luminance
+        self.four_color = device.four_color
         self.packet_size = 0 #(device.width * device.height) // 8 * (2 if device.red else 1)
         self.event: Event = Event()
         self.command_data: bytes | None = None
@@ -268,6 +269,9 @@ class GiciskyClient:
         width, height = img.size
         pixels = img.load()
 
+        if self.four_color:
+            return self._make_four_color_packet(pixels, width, height, threshold, red_threshold)
+
         byte_data = []
         byte_data_red = []
         current_byte = 0
@@ -306,6 +310,52 @@ class GiciskyClient:
         
         combined = byte_data + byte_data_red if self.support_red else byte_data
         return list(bytearray(combined))
+
+    def _make_four_color_packet(self, pixels, width, height, threshold, red_threshold) -> list[int]:
+        byte_data = []
+        current_byte = 0
+        pixel_count = 0
+        
+        # 00: Black
+        # 01: White
+        # 10: Yellow
+        # 11: Red
+
+        for y in range(height):
+            for x in range(width):
+                r, g, b = pixels[(x, y)]
+                
+                # Logic from r.java
+                is_white = (((r * 38) + (g * 75) + (b * 15)) >> 7) > 128
+                is_red = r > 128
+                is_green = g > 128
+                is_blue = b > 128
+                
+                if is_green and is_red and is_blue:
+                   is_green = False
+                
+                if is_red and is_white:
+                    is_red = False
+
+                val = 0
+                if is_green:
+                    val = 2 # Yellow
+                elif is_red:
+                    val = 3 # Red
+                elif is_white:
+                    val = 1 # White
+                else:
+                    val = 0 # Black
+
+                shift = (3 - (pixel_count % 4)) * 2
+                current_byte |= (val << shift)
+                
+                pixel_count += 1
+                if pixel_count % 4 == 0:
+                    byte_data.append(current_byte)
+                    current_byte = 0
+        
+        return list(bytearray(byte_data))
     
     def _compress_byte_data(self, byte_data, byte_data_red) -> list[int]:
         byte_per_line = self.height // 8
