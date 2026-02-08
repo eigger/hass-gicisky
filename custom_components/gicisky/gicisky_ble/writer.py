@@ -283,7 +283,7 @@ class GiciskyClient:
                 px = (x, y)
                 r, g, b = pixels[px]
 
-                luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+                luminance = ((r * 38) + (g * 75) + (b * 15)) >> 7
                 if self.invert_luminance:
                     if luminance < threshold:
                         current_byte |= (1 << bit_pos)
@@ -314,19 +314,16 @@ class GiciskyClient:
     def _make_four_color_packet(self, pixels, width, height, threshold, red_threshold) -> list[int]:
         byte_data = []
         current_byte = 0
-        pixel_count = 0
+        shift_counter = 3
         
-        # 00: Black
-        # 01: White
-        # 10: Yellow
-        # 11: Red
-
-        for y in range(height):
-            for x in range(width):
+        for y in range(height - 1, -1, -1) if self.mirror_y else range(height):
+            for x in range(width - 1, -1, -1) if self.mirror_x else range(width):
                 r, g, b = pixels[(x, y)]
                 
-                # Logic from r.java
-                is_white = (((r * 38) + (g * 75) + (b * 15)) >> 7) > threshold
+                # Calculate weighted luminance for white detection
+                luminance = ((r * 38) + (g * 75) + (b * 15)) >> 7
+                
+                is_white = luminance > threshold
                 is_red = r > red_threshold
                 is_green = g > red_threshold
                 is_blue = b > red_threshold
@@ -337,23 +334,17 @@ class GiciskyClient:
                 if is_red and is_white:
                     is_red = False
 
-                val = 0
-                if is_green:
-                    val = 2 # Yellow
-                elif is_red:
-                    val = 3 # Red
-                elif is_white:
-                    val = 1 # White
-                else:
-                    val = 0 # Black
+                # 00: Black, 01: White, 10: Yellow, 11: Red
+                val = 2 if is_green else (3 if is_red else (1 if is_white else 0))
 
-                shift = (3 - (pixel_count % 4)) * 2
-                current_byte |= (val << shift)
+                current_byte |= (val << (shift_counter * 2))
                 
-                pixel_count += 1
-                if pixel_count % 4 == 0:
+                if shift_counter == 0:
                     byte_data.append(current_byte)
                     current_byte = 0
+                    shift_counter = 3
+                else:
+                    shift_counter -= 1
         
         return list(bytearray(byte_data))
     
