@@ -1,0 +1,1084 @@
+alias: "800x480 캘린더 & 일정"
+description: "7.5인치 800x480 E-Ink 디스플레이용 월간 달력 및 일정 표시"
+triggers:
+  - trigger: time
+    at: "00:00:00"
+actions:
+  # 1. 캘린더 데이터 가져오기 (45일간의 일정 + 공휴일)
+  - action: calendar.get_events
+    target:
+      entity_id: 
+        - calendar.google    # 사용자의 캘린더
+        - calendar.holidays  # 공휴일 캘린더
+    data:
+      duration:
+        days: 45
+    response_variable: agenda_response
+
+  # 2. 날짜 계산 및 변수 설정
+  - variables:
+      year: "{{ now().year }}"
+      month: "{{ now().month }}"
+      days_in_month: "{{ ((now().replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)).day }}"
+      start_weekday_offset: "{{ (now().replace(day=1).weekday() + 1) % 7 }}"
+      num_rows: "{{ ((start_weekday_offset + days_in_month - 1) // 7) + 1 }}"
+      grid_x_start: 5
+      cell_width: 70
+      cell_height: 62
+      weekday_header_height: 40
+      available_height: 420  # 480 - 60 (title area)
+      title_bottom: 60
+      grid_content_height: "{{ cell_height * num_rows }}"
+      total_grid_height: "{{ grid_content_height + weekday_header_height }}"
+      vertical_padding: "{{ (available_height - total_grid_height) / 2 }}"
+      header_y: "{{ title_bottom + vertical_padding + (weekday_header_height / 2) }}"
+      grid_y_start: "{{ title_bottom + vertical_padding + weekday_header_height }}"
+      
+      # 공휴일 날짜 추출
+      holidays: >
+        {% set holiday_days = namespace(days=[]) %}
+        {% if 'calendar.holidays' in agenda_response %}
+          {% for event in agenda_response['calendar.holidays']['events'] %}
+             {% set start_data = event.start %}
+             {% if start_data is string %}
+               {% set start_dt = start_data | as_datetime | as_local %}
+             {% else %}
+               {% set start_dt = (start_data.date | default(start_data.dateTime)) | as_datetime | as_local %}
+             {% endif %}
+             {% if start_dt and start_dt.month == now().month %}
+               {% set holiday_days.days = holiday_days.days + [start_dt.day] %}
+             {% endif %}
+          {% endfor %}
+        {% endif %}
+        {{ holiday_days.days }}
+
+      # 일정이 있는 날짜 추출
+      event_days: >
+        {% set e_days = namespace(days=[]) %}
+        {% if 'calendar.google' in agenda_response %}
+          {% for event in agenda_response['calendar.google']['events'] %}
+             {% set start_data = event.start %}
+             {% if start_data is string %}
+               {% set start_dt = start_data | as_datetime | as_local %}
+             {% else %}
+               {% set start_dt = (start_data.date | default(start_data.dateTime)) | as_datetime | as_local %}
+             {% endif %}
+             {% if start_dt and start_dt.month == now().month %}
+               {% set e_days.days = e_days.days + [start_dt.day] %}
+             {% endif %}
+          {% endfor %}
+        {% endif %}
+        {{ e_days.days | unique | list }}
+      
+      agenda_events: >
+        {% if 'calendar.google' in agenda_response %}
+          {% set events = agenda_response['calendar.google']['events'] %}
+          {{ events | sort(attribute='start') }}
+        {% else %}
+          []
+        {% endif %}
+
+  # 3. 디스플레이 업데이트
+  - action: gicisky.write
+    data:
+      payload:
+        # --- 배경 및 구분선 ---
+        - type: line
+          x_start: 500
+          x_end: 500
+          y_start: 20
+          y_end: 460
+          width: 3
+          fill: black
+        
+        # --- 왼쪽: 월간 달력 영역 ---
+        - type: text
+          value: "{{ year }}년 {{ month }}월"
+          x: 250
+          y: 35
+          size: 45
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          
+        # 요일 헤더
+        - type: text
+          value: "일"
+          x: "{{ grid_x_start + (cell_width * 0) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          color: red
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "월"
+          x: "{{ grid_x_start + (cell_width * 1) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "화"
+          x: "{{ grid_x_start + (cell_width * 2) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "수"
+          x: "{{ grid_x_start + (cell_width * 3) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "목"
+          x: "{{ grid_x_start + (cell_width * 4) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "금"
+          x: "{{ grid_x_start + (cell_width * 5) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+        - type: text
+          value: "토"
+          x: "{{ grid_x_start + (cell_width * 6) + (cell_width / 2) }}"
+          y: "{{ header_y }}"
+          size: 26
+          color: red
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+
+        # 3. 날짜 표시 (1일 ~ 31일 Unrolled)
+        # Day 1
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (1-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (1-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (1-1)) % 7) in [0, 6] or 1 in holidays) else 'black' }}"
+          visible: "{{ 1 == now().day }}"
+        - type: text
+          value: "1"
+          x: "{{ grid_x_start + (((start_weekday_offset + (1-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (1-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 1 == now().day else ('red' if (((start_weekday_offset + (1-1)) % 7) in [0, 6] or 1 in holidays) else 'black') }}"
+          visible: "{{ 1 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (1-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (1-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 1 <= days_in_month and 1 in event_days }}"
+        # Day 2
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (2-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (2-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (2-1)) % 7) in [0, 6] or 2 in holidays) else 'black' }}"
+          visible: "{{ 2 == now().day }}"
+        - type: text
+          value: "2"
+          x: "{{ grid_x_start + (((start_weekday_offset + (2-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (2-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 2 == now().day else ('red' if (((start_weekday_offset + (2-1)) % 7) in [0, 6] or 2 in holidays) else 'black') }}"
+          visible: "{{ 2 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (2-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (2-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 2 <= days_in_month and 2 in event_days }}"
+        # Day 3
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (3-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (3-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (3-1)) % 7) in [0, 6] or 3 in holidays) else 'black' }}"
+          visible: "{{ 3 == now().day }}"
+        - type: text
+          value: "3"
+          x: "{{ grid_x_start + (((start_weekday_offset + (3-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (3-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 3 == now().day else ('red' if (((start_weekday_offset + (3-1)) % 7) in [0, 6] or 3 in holidays) else 'black') }}"
+          visible: "{{ 3 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (3-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (3-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 3 <= days_in_month and 3 in event_days }}"
+        # Day 4
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (4-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (4-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (4-1)) % 7) in [0, 6] or 4 in holidays) else 'black' }}"
+          visible: "{{ 4 == now().day }}"
+        - type: text
+          value: "4"
+          x: "{{ grid_x_start + (((start_weekday_offset + (4-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (4-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 4 == now().day else ('red' if (((start_weekday_offset + (4-1)) % 7) in [0, 6] or 4 in holidays) else 'black') }}"
+          visible: "{{ 4 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (4-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (4-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 4 <= days_in_month and 4 in event_days }}"
+        # Day 5
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (5-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (5-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (5-1)) % 7) in [0, 6] or 5 in holidays) else 'black' }}"
+          visible: "{{ 5 == now().day }}"
+        - type: text
+          value: "5"
+          x: "{{ grid_x_start + (((start_weekday_offset + (5-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (5-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 5 == now().day else ('red' if (((start_weekday_offset + (5-1)) % 7) in [0, 6] or 5 in holidays) else 'black') }}"
+          visible: "{{ 5 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (5-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (5-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 5 <= days_in_month and 5 in event_days }}"
+        # Day 6
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (6-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (6-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (6-1)) % 7) in [0, 6] or 6 in holidays) else 'black' }}"
+          visible: "{{ 6 == now().day }}"
+        - type: text
+          value: "6"
+          x: "{{ grid_x_start + (((start_weekday_offset + (6-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (6-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 6 == now().day else ('red' if (((start_weekday_offset + (6-1)) % 7) in [0, 6] or 6 in holidays) else 'black') }}"
+          visible: "{{ 6 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (6-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (6-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 6 <= days_in_month and 6 in event_days }}"
+        # Day 7
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (7-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (7-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (7-1)) % 7) in [0, 6] or 7 in holidays) else 'black' }}"
+          visible: "{{ 7 == now().day }}"
+        - type: text
+          value: "7"
+          x: "{{ grid_x_start + (((start_weekday_offset + (7-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (7-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 7 == now().day else ('red' if (((start_weekday_offset + (7-1)) % 7) in [0, 6] or 7 in holidays) else 'black') }}"
+          visible: "{{ 7 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (7-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (7-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 7 <= days_in_month and 7 in event_days }}"
+        # Day 8
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (8-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (8-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (8-1)) % 7) in [0, 6] or 8 in holidays) else 'black' }}"
+          visible: "{{ 8 == now().day }}"
+        - type: text
+          value: "8"
+          x: "{{ grid_x_start + (((start_weekday_offset + (8-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (8-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 8 == now().day else ('red' if (((start_weekday_offset + (8-1)) % 7) in [0, 6] or 8 in holidays) else 'black') }}"
+          visible: "{{ 8 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (8-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (8-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 8 <= days_in_month and 8 in event_days }}"
+        # Day 9
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (9-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (9-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (9-1)) % 7) in [0, 6] or 9 in holidays) else 'black' }}"
+          visible: "{{ 9 == now().day }}"
+        - type: text
+          value: "9"
+          x: "{{ grid_x_start + (((start_weekday_offset + (9-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (9-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 9 == now().day else ('red' if (((start_weekday_offset + (9-1)) % 7) in [0, 6] or 9 in holidays) else 'black') }}"
+          visible: "{{ 9 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (9-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (9-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 9 <= days_in_month and 9 in event_days }}"
+        # Day 10
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (10-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (10-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (10-1)) % 7) in [0, 6] or 10 in holidays) else 'black' }}"
+          visible: "{{ 10 == now().day }}"
+        - type: text
+          value: "10"
+          x: "{{ grid_x_start + (((start_weekday_offset + (10-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (10-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 10 == now().day else ('red' if (((start_weekday_offset + (10-1)) % 7) in [0, 6] or 10 in holidays) else 'black') }}"
+          visible: "{{ 10 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (10-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (10-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 10 <= days_in_month and 10 in event_days }}"
+        # Day 11
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (11-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (11-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (11-1)) % 7) in [0, 6] or 11 in holidays) else 'black' }}"
+          visible: "{{ 11 == now().day }}"
+        - type: text
+          value: "11"
+          x: "{{ grid_x_start + (((start_weekday_offset + (11-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (11-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 11 == now().day else ('red' if (((start_weekday_offset + (11-1)) % 7) in [0, 6] or 11 in holidays) else 'black') }}"
+          visible: "{{ 11 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (11-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (11-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 11 <= days_in_month and 11 in event_days }}"
+        # Day 12
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (12-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (12-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (12-1)) % 7) in [0, 6] or 12 in holidays) else 'black' }}"
+          visible: "{{ 12 == now().day }}"
+        - type: text
+          value: "12"
+          x: "{{ grid_x_start + (((start_weekday_offset + (12-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (12-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 12 == now().day else ('red' if (((start_weekday_offset + (12-1)) % 7) in [0, 6] or 12 in holidays) else 'black') }}"
+          visible: "{{ 12 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (12-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (12-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 12 <= days_in_month and 12 in event_days }}"
+        # Day 13
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (13-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (13-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (13-1)) % 7) in [0, 6] or 13 in holidays) else 'black' }}"
+          visible: "{{ 13 == now().day }}"
+        - type: text
+          value: "13"
+          x: "{{ grid_x_start + (((start_weekday_offset + (13-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (13-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 13 == now().day else ('red' if (((start_weekday_offset + (13-1)) % 7) in [0, 6] or 13 in holidays) else 'black') }}"
+          visible: "{{ 13 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (13-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (13-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 13 <= days_in_month and 13 in event_days }}"
+        # Day 14
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (14-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (14-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (14-1)) % 7) in [0, 6] or 14 in holidays) else 'black' }}"
+          visible: "{{ 14 == now().day }}"
+        - type: text
+          value: "14"
+          x: "{{ grid_x_start + (((start_weekday_offset + (14-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (14-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 14 == now().day else ('red' if (((start_weekday_offset + (14-1)) % 7) in [0, 6] or 14 in holidays) else 'black') }}"
+          visible: "{{ 14 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (14-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (14-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 14 <= days_in_month and 14 in event_days }}"
+        # Day 15
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (15-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (15-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (15-1)) % 7) in [0, 6] or 15 in holidays) else 'black' }}"
+          visible: "{{ 15 == now().day }}"
+        - type: text
+          value: "15"
+          x: "{{ grid_x_start + (((start_weekday_offset + (15-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (15-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 15 == now().day else ('red' if (((start_weekday_offset + (15-1)) % 7) in [0, 6] or 15 in holidays) else 'black') }}"
+          visible: "{{ 15 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (15-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (15-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 15 <= days_in_month and 15 in event_days }}"
+        # Day 16
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (16-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (16-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (16-1)) % 7) in [0, 6] or 16 in holidays) else 'black' }}"
+          visible: "{{ 16 == now().day }}"
+        - type: text
+          value: "16"
+          x: "{{ grid_x_start + (((start_weekday_offset + (16-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (16-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 16 == now().day else ('red' if (((start_weekday_offset + (16-1)) % 7) in [0, 6] or 16 in holidays) else 'black') }}"
+          visible: "{{ 16 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (16-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (16-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 16 <= days_in_month and 16 in event_days }}"
+        # Day 17
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (17-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (17-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (17-1)) % 7) in [0, 6] or 17 in holidays) else 'black' }}"
+          visible: "{{ 17 == now().day }}"
+        - type: text
+          value: "17"
+          x: "{{ grid_x_start + (((start_weekday_offset + (17-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (17-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 17 == now().day else ('red' if (((start_weekday_offset + (17-1)) % 7) in [0, 6] or 17 in holidays) else 'black') }}"
+          visible: "{{ 17 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (17-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (17-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 17 <= days_in_month and 17 in event_days }}"
+        # Day 18
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (18-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (18-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (18-1)) % 7) in [0, 6] or 18 in holidays) else 'black' }}"
+          visible: "{{ 18 == now().day }}"
+        - type: text
+          value: "18"
+          x: "{{ grid_x_start + (((start_weekday_offset + (18-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (18-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 18 == now().day else ('red' if (((start_weekday_offset + (18-1)) % 7) in [0, 6] or 18 in holidays) else 'black') }}"
+          visible: "{{ 18 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (18-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (18-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 18 <= days_in_month and 18 in event_days }}"
+        # Day 19
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (19-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (19-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (19-1)) % 7) in [0, 6] or 19 in holidays) else 'black' }}"
+          visible: "{{ 19 == now().day }}"
+        - type: text
+          value: "19"
+          x: "{{ grid_x_start + (((start_weekday_offset + (19-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (19-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 19 == now().day else ('red' if (((start_weekday_offset + (19-1)) % 7) in [0, 6] or 19 in holidays) else 'black') }}"
+          visible: "{{ 19 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (19-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (19-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 19 <= days_in_month and 19 in event_days }}"
+        # Day 20
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (20-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (20-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (20-1)) % 7) in [0, 6] or 20 in holidays) else 'black' }}"
+          visible: "{{ 20 == now().day }}"
+        - type: text
+          value: "20"
+          x: "{{ grid_x_start + (((start_weekday_offset + (20-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (20-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 20 == now().day else ('red' if (((start_weekday_offset + (20-1)) % 7) in [0, 6] or 20 in holidays) else 'black') }}"
+          visible: "{{ 20 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (20-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (20-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 20 <= days_in_month and 20 in event_days }}"
+        # Day 21
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (21-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (21-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (21-1)) % 7) in [0, 6] or 21 in holidays) else 'black' }}"
+          visible: "{{ 21 == now().day }}"
+        - type: text
+          value: "21"
+          x: "{{ grid_x_start + (((start_weekday_offset + (21-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (21-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 21 == now().day else ('red' if (((start_weekday_offset + (21-1)) % 7) in [0, 6] or 21 in holidays) else 'black') }}"
+          visible: "{{ 21 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (21-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (21-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 21 <= days_in_month and 21 in event_days }}"
+        # Day 22
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (22-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (22-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (22-1)) % 7) in [0, 6] or 22 in holidays) else 'black' }}"
+          visible: "{{ 22 == now().day }}"
+        - type: text
+          value: "22"
+          x: "{{ grid_x_start + (((start_weekday_offset + (22-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (22-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 22 == now().day else ('red' if (((start_weekday_offset + (22-1)) % 7) in [0, 6] or 22 in holidays) else 'black') }}"
+          visible: "{{ 22 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (22-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (22-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 22 <= days_in_month and 22 in event_days }}"
+        # Day 23
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (23-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (23-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (23-1)) % 7) in [0, 6] or 23 in holidays) else 'black' }}"
+          visible: "{{ 23 == now().day }}"
+        - type: text
+          value: "23"
+          x: "{{ grid_x_start + (((start_weekday_offset + (23-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (23-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 23 == now().day else ('red' if (((start_weekday_offset + (23-1)) % 7) in [0, 6] or 23 in holidays) else 'black') }}"
+          visible: "{{ 23 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (23-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (23-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 23 <= days_in_month and 23 in event_days }}"
+        # Day 24
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (24-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (24-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (24-1)) % 7) in [0, 6] or 24 in holidays) else 'black' }}"
+          visible: "{{ 24 == now().day }}"
+        - type: text
+          value: "24"
+          x: "{{ grid_x_start + (((start_weekday_offset + (24-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (24-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 24 == now().day else ('red' if (((start_weekday_offset + (24-1)) % 7) in [0, 6] or 24 in holidays) else 'black') }}"
+          visible: "{{ 24 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (24-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (24-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 24 <= days_in_month and 24 in event_days }}"
+        # Day 25
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (25-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (25-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (25-1)) % 7) in [0, 6] or 25 in holidays) else 'black' }}"
+          visible: "{{ 25 == now().day }}"
+        - type: text
+          value: "25"
+          x: "{{ grid_x_start + (((start_weekday_offset + (25-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (25-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 25 == now().day else ('red' if (((start_weekday_offset + (25-1)) % 7) in [0, 6] or 25 in holidays) else 'black') }}"
+          visible: "{{ 25 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (25-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (25-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 25 <= days_in_month and 25 in event_days }}"
+        # Day 26
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (26-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (26-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (26-1)) % 7) in [0, 6] or 26 in holidays) else 'black' }}"
+          visible: "{{ 26 == now().day }}"
+        - type: text
+          value: "26"
+          x: "{{ grid_x_start + (((start_weekday_offset + (26-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (26-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 26 == now().day else ('red' if (((start_weekday_offset + (26-1)) % 7) in [0, 6] or 26 in holidays) else 'black') }}"
+          visible: "{{ 26 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (26-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (26-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 26 <= days_in_month and 26 in event_days }}"
+        # Day 27
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (27-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (27-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (27-1)) % 7) in [0, 6] or 27 in holidays) else 'black' }}"
+          visible: "{{ 27 == now().day }}"
+        - type: text
+          value: "27"
+          x: "{{ grid_x_start + (((start_weekday_offset + (27-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (27-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 27 == now().day else ('red' if (((start_weekday_offset + (27-1)) % 7) in [0, 6] or 27 in holidays) else 'black') }}"
+          visible: "{{ 27 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (27-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (27-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 27 <= days_in_month and 27 in event_days }}"
+        # Day 28
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (28-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (28-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (28-1)) % 7) in [0, 6] or 28 in holidays) else 'black' }}"
+          visible: "{{ 28 == now().day }}"
+        - type: text
+          value: "28"
+          x: "{{ grid_x_start + (((start_weekday_offset + (28-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (28-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 28 == now().day else ('red' if (((start_weekday_offset + (28-1)) % 7) in [0, 6] or 28 in holidays) else 'black') }}"
+          visible: "{{ 28 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (28-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (28-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 28 <= days_in_month and 28 in event_days }}"
+        # Day 29
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (29-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (29-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (29-1)) % 7) in [0, 6] or 29 in holidays) else 'black' }}"
+          visible: "{{ 29 == now().day }}"
+        - type: text
+          value: "29"
+          x: "{{ grid_x_start + (((start_weekday_offset + (29-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (29-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 29 == now().day else ('red' if (((start_weekday_offset + (29-1)) % 7) in [0, 6] or 29 in holidays) else 'black') }}"
+          visible: "{{ 29 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (29-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (29-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 29 <= days_in_month and 29 in event_days }}"
+        # Day 30
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (30-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (30-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (30-1)) % 7) in [0, 6] or 30 in holidays) else 'black' }}"
+          visible: "{{ 30 == now().day }}"
+        - type: text
+          value: "30"
+          x: "{{ grid_x_start + (((start_weekday_offset + (30-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (30-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 30 == now().day else ('red' if (((start_weekday_offset + (30-1)) % 7) in [0, 6] or 30 in holidays) else 'black') }}"
+          visible: "{{ 30 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (30-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (30-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 30 <= days_in_month and 30 in event_days }}"
+        # Day 31
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (31-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (31-1)) // 7) * cell_height) + (cell_height/2) }}"
+          radius: 25
+          fill: "{{ 'red' if (((start_weekday_offset + (31-1)) % 7) in [0, 6] or 31 in holidays) else 'black' }}"
+          visible: "{{ 31 == now().day }}"
+        - type: text
+          value: "31"
+          x: "{{ grid_x_start + (((start_weekday_offset + (31-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (31-1)) // 7) * cell_height) + (cell_height/2) }}"
+          size: 30
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: "{{ 'white' if 31 == now().day else ('red' if (((start_weekday_offset + (31-1)) % 7) in [0, 6] or 31 in holidays) else 'black') }}"
+          visible: "{{ 31 <= days_in_month }}"
+        - type: circle
+          x: "{{ grid_x_start + (((start_weekday_offset + (31-1)) % 7) * cell_width) + (cell_width/2) }}"
+          y: "{{ grid_y_start + (((start_weekday_offset + (31-1)) // 7) * cell_height) + (cell_height/2) + 20 }}" 
+          radius: 3
+          fill: black
+          visible: "{{ 31 <= days_in_month and 31 in event_days }}"
+
+        # --- 오른쪽: 일정 목록 영역 ---
+        - type: text
+          value: "일정 목록"
+          x: 650
+          y: 40
+          size: 35
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+
+        # 일정 1
+        - type: text
+          value: >
+            {%- if agenda_events | length > 0 -%}
+              {%- set event = agenda_events[0] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 100
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 0 }}"
+        
+        # 일정 2
+        - type: text
+          value: >
+            {%- if agenda_events | length > 1 -%}
+              {%- set event = agenda_events[1] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 140
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 1 }}"
+
+        # 일정 3
+        - type: text
+          value: >
+            {%- if agenda_events | length > 2 -%}
+              {%- set event = agenda_events[2] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 180
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 2 }}"
+
+        # 일정 4
+        - type: text
+          value: >
+            {%- if agenda_events | length > 3 -%}
+              {%- set event = agenda_events[3] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 220
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 3 }}"
+
+        # 일정 5
+        - type: text
+          value: >
+            {%- if agenda_events | length > 4 -%}
+              {%- set event = agenda_events[4] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 260
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 4 }}"
+
+        # 일정 6
+        - type: text
+          value: >
+            {%- if agenda_events | length > 5 -%}
+              {%- set event = agenda_events[5] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 300
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 5 }}"
+
+        # 일정 7
+        - type: text
+          value: >
+            {%- if agenda_events | length > 6 -%}
+              {%- set event = agenda_events[6] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 340
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 6 }}"
+
+        # 일정 8
+        - type: text
+          value: >
+            {%- if agenda_events | length > 7 -%}
+              {%- set event = agenda_events[7] -%}
+              {%- set s = event.start -%}
+              {%- set t_str = '' -%}
+              {%- if s is mapping -%}
+                {%- if s.date -%}
+                  {%- set t_str = as_timestamp(s.date) | timestamp_custom('%m/%d') -%}
+                {%- elif s.dateTime -%}
+                  {%- set t_str = as_timestamp(s.dateTime) | timestamp_custom('%m/%d %H:%M') -%}
+                {%- endif -%}
+              {%- else -%}
+                 {%- set t_str = as_timestamp(s) | timestamp_custom('%m/%d') -%}
+              {%- endif -%}
+              {{ t_str }} {{ event.summary | truncate(10, true, '..') }}
+            {%- else -%}
+              ""
+            {%- endif -%}
+          x: 520
+          y: 380
+          size: 24
+          anchor: lt
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length > 7 }}"
+
+        # 일정이 없을 경우 표시
+        - type: text
+          value: "예정된 일정이 없습니다."
+          x: 650
+          y: 150
+          size: 28
+          anchor: mm
+          font: fonts/GmarketSansTTFBold.ttf
+          color: black
+          visible: "{{ agenda_events | length == 0 }}"
+    target:
+      device_id: 2766ccde02539d2b8cfe034556aa95ae
