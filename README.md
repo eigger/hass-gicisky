@@ -152,6 +152,9 @@ target:
 
 > Preview image is available via the **Camera** entity without sending data to the physical device.
 
+> [!TIP]
+> You can use the **[Gicisky Payload Editor](https://eigger.github.io/Gicisky_Payload_Editor.html)** to design a rough layout via drag-and-drop in your browser and automatically generate YAML. Use the generated YAML with `dry_run: true` to preview it without sending data to the actual device.
+
 ```yaml
 action: gicisky.write
 data:
