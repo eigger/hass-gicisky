@@ -1,0 +1,193 @@
+alias: 7.5 4696 종합
+description: ""
+triggers:
+  - trigger: time_pattern
+    hours: /1
+conditions: []
+actions:
+  - variables:
+      response: null
+  - action: calendar.get_events
+    metadata: {}
+    data:
+      duration:
+        hours: 24
+        minutes: 0
+        seconds: 0
+    response_variable: response
+    target:
+      entity_id:
+        - calendar.google
+        - calendar.holidays
+  - variables:
+      duration_day: 1
+      holiday: calendar.holidays
+      data_allday: |
+        {% set day_map = {
+          'Monday':'월요일','Tuesday':'화요일','Wednesday':'수요일',
+          'Thursday':'목요일','Friday':'금요일',
+          'Saturday':'토요일','Sunday':'일요일'
+        } %}
+        {% set events = merge_response(response) | sort(attribute='start') %}
+        {% set ns = namespace(by_day={}) %}
+        {% for i in range(duration_day) %}
+          {% set date = (now() + timedelta(days=i)).date() %}
+          {% set match = namespace(event='') %}
+          {% for ev in events %}
+            {% set s = as_datetime(ev.start).date() %}
+            {% set e = as_datetime(ev.end).date() %}
+            {% if ('T' in ev.start and s <= date <= e) or (s < e and s <= date < e) %}
+              {% set match.event = ev %}
+              {% break %}
+            {% endif %}
+          {% endfor %}
+          {% set details = {'date': date.strftime('%Y-%m-%d'), 'day': day_map[date.strftime('%A')]} %}
+          {% if match.event and match.event.summary %}
+            {% set details = details | combine({
+              'start':   match.event.start,
+              'end':     match.event.end,
+              'summary': match.event.summary,
+              'entity_id': match.event.entity_id
+            }) %}
+          {% endif %}
+          {% set details = details | combine({
+            'holiday': date.strftime('%A') == 'Saturday' or date.strftime('%A') == 'Sunday' or details.entity_id == holiday
+          }) %}      
+          {% set ns.by_day = ns.by_day | combine({ date|string: details }) %}
+        {% endfor %}
+        {{ ns.by_day }}
+      today: "{{ data_allday[now().strftime('%Y-%m-%d')] | default({}) }}"
+  - action: gicisky.write
+    data:
+      rotate: 270
+      payload:
+        - type: text
+          value: "{{ now().strftime('%H시') }} 기준"
+          font: fonts/CookieRunBold.ttf
+          anchor: rt
+          x: 450
+          "y": 20
+          size: 40
+          color: black
+        - type: text
+          value: "{{ now().strftime('%m월') }}"
+          font: fonts/CookieRunBold.ttf
+          anchor: lt
+          x: 20
+          "y": 20
+          size: 40
+          color: black
+        - type: text
+          value: "{{ now().strftime('%d') }}"
+          font: fonts/CookieRunBold.ttf
+          anchor: mt
+          x: 120
+          "y": 120
+          size: 180
+          color: |
+            {{ 'red' if today.holiday else 'black' }}
+        - type: text
+          value: |
+            {{ today.day }}
+          font: fonts/CookieRunBold.ttf
+          anchor: mt
+          x: 360
+          "y": 100
+          size: 80
+          color: |
+            {{ 'red' if today.holiday else 'black' }}
+        - type: text
+          value: "{{ state_attr('weather.tongbogdong', 'friendly_name') }}"
+          font: fonts/CookieRunBold.ttf
+          anchor: mt
+          x: 360
+          "y": 200
+          size: 80
+          color: black
+        - type: icon
+          value: |
+            weather-{{ states('weather.tongbogdong') }}
+          anchor: lb
+          x: 30
+          "y": 450
+          size: 180
+          color: black
+        - type: text
+          value: |
+            {{ states('sensor.hyeonjaeondo') }}
+          font: fonts/CookieRunBold.ttf
+          anchor: rb
+          x: 390
+          "y": 390
+          size: 80
+          color: black
+        - type: text
+          value: |
+            {{ state_attr('sensor.hyeonjaeondo', 'unit_of_measurement') }}
+          font: fonts/CookieRunBold.ttf
+          anchor: rb
+          x: 450
+          "y": 390
+          size: 40
+          color: black
+        - type: text
+          value: |
+            {{ states('sensor.coejeoondo') }} / {{ states('sensor.coegoondo') }}
+          font: fonts/CookieRunBold.ttf
+          anchor: rb
+          x: 390
+          "y": 435
+          size: 40
+          color: black
+        - type: text
+          value: "{{ states('sensor.hyeonjaenalssijeongbo') }}"
+          font: fonts/OwnglyphParkDaHyun.ttf
+          anchor: mt
+          x: 240
+          "y": 500
+          size: 45
+          color: black
+        - type: text
+          value: >
+            {% set rain = states('sensor.sigandanggangsuryang') %} {% set start
+            = states('sensor.bisijagsiganoneul') %} {{ '비 ' + rain + 'mm' if
+            rain != '0' else start + ' 비 예보' if start != '비안옴' else start }}
+          font: fonts/OwnglyphParkDaHyun.ttf
+          anchor: mt
+          x: 240
+          "y": 550
+          size: 80
+          color: |
+            {% set rain = states('sensor.sigandanggangsuryang') %}
+            {% set start = states('sensor.bisijagsiganoneul') %}
+            {{ 'red' if rain != '0' else 'red' if start != '비안옴' else 'black' }}
+        - type: text
+          value: |
+            {% if 'summary' in today %}
+              {{ today.summary }}
+            {% else %}
+              일정 없음
+            {% endif %}
+          font: fonts/OwnglyphParkDaHyun.ttf
+          anchor: mb
+          x: 240
+          "y": 720
+          size: 80
+          color: |
+            {{ 'red' if today.holiday else 'black' }}
+        - type: text
+          value: |
+            {% if 'start' in today and today.start and 'T' in today.start %}
+              {{ as_datetime(today.start).strftime('%H:%M') }}
+            {% endif %}
+          font: fonts/GmarketSansTTFBold.ttf
+          anchor: mb
+          x: 240
+          "y": 770
+          size: 45
+          color: |
+            {{ 'red' if today.holiday else 'black' }}
+    target:
+      device_id: 2766ccde02539d2b8cfe034556aa95ae
+    enabled: true
+mode: single
