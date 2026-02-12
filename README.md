@@ -59,6 +59,7 @@ beyond their traditional use cases.
 | TFT | 2.1" | 250 × 132 | BW |
 | EPD | 2.1" | 250 × 128 | BWR |
 | EPD | 2.9" | 296 × 128 | BWR |
+| EPD | 2.9" | 296 × 128 | BWRY |
 | EPD | 4.2" | 400 × 300 | BWR |
 | EPD | 7.5" | 800 × 480 | BWR |
 
