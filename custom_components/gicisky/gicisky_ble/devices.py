@@ -13,6 +13,7 @@ class DeviceEntry:
     mirror_y: bool = False
     rotation: int = 0
     compression: bool = False
+    compression2: bool = False  # True: 2-bit BWR packing + compress (e.g. EPD 10.2")
     invert_luminance: bool = False
     manufacturer: str = "Gicisky"
     max_voltage: float = 2.9
@@ -85,8 +86,8 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         model="EPD 10.2\" BWR",
         width=960,
         height=640,
-        compression=True,
-        max_voltage=3.0
+        compression2=True,
+        max_voltage=3.2
     ),
 }
 # 비트7	비트6	비트5	비트4	비트3	비트2	비트1	비트0
