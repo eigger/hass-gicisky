@@ -12,6 +12,7 @@ from bleak.backends.device import BLEDevice
 from bleak_retry_connector import establish_connection
 
 from .devices import DeviceEntry
+from .compression import compress as compress_data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -106,6 +107,7 @@ class GiciskyClient:
         self.mirror_x = device.mirror_x
         self.mirror_y = device.mirror_y
         self.compression = device.compression
+        self.compression2 = device.compression2
         self.invert_luminance = device.invert_luminance
         self.four_color = device.four_color
         self.packet_size = 0 #(device.width * device.height) // 8 * (2 if device.red else 1)
@@ -272,6 +274,9 @@ class GiciskyClient:
         if self.four_color:
             return self._make_four_color_packet(pixels, width, height, threshold, red_threshold)
 
+        if self.compression2:
+            return self._compress_byte_data_2(pixels, width, height, threshold, red_threshold)
+
         byte_data = []
         byte_data_red = []
         current_byte = 0
@@ -304,6 +309,8 @@ class GiciskyClient:
         if bit_pos != 7:
             byte_data.append(current_byte)
             byte_data_red.append(current_byte_red)
+
+
 
         if self.compression:
             return self._compress_byte_data(byte_data, byte_data_red)
@@ -375,20 +382,73 @@ class GiciskyClient:
                 pos += byte_per_line
 
         total_len = len(buf)
-        buf[0] =  total_len        & 0xFF
-        buf[1] = (total_len >>  8) & 0xFF
+        buf[0] = total_len & 0xFF
+        buf[1] = (total_len >> 8) & 0xFF
         buf[2] = (total_len >> 16) & 0xFF
         buf[3] = (total_len >> 24) & 0xFF
 
         return list(bytearray(buf))
 
+    def _compress_byte_data_2(self, pixels, width, height, threshold, red_threshold) -> list[int]:
+        """1-bit dual plane BWR packing + compress. Used when compression2=True.
+
+        Part1: BW plane (1=white, 0=black), MSB first, row-major
+        Part2: Red plane (1=red, 0=not red), MSB first, row-major
+        """
+        total_pixels = width * height
+        plane_bytes = total_pixels // 8
+        bw_plane = bytearray(plane_bytes)
+        red_plane = bytearray(plane_bytes)
+        byte_idx = 0
+        bit_pos = 7  # MSB first
+        y_range = range(height - 1, -1, -1) if self.mirror_y else range(height)
+        x_range = range(width - 1, -1, -1) if self.mirror_x else range(width)
+        for y in y_range:
+            for x in x_range:
+                r, g, b = pixels[x, y]
+                luminance = (r * 38 + g * 75 + b * 15) >> 7
+                is_white = luminance > threshold
+                is_red = (r > red_threshold) and (g < red_threshold)
+                if is_white:
+                    bw_plane[byte_idx] |= (1 << bit_pos)
+                if is_red:
+                    red_plane[byte_idx] |= (1 << bit_pos)
+                bit_pos -= 1
+                if bit_pos < 0:
+                    byte_idx += 1
+                    bit_pos = 7
+        raw = bytes(bw_plane) + bytes(red_plane)
+        try:
+            compressed = compress_data(raw, force_raw=True)  # TODO: QuickLZ 호환 확인 후 force_raw 제거
+            # compress_data 반환: [4B part2_len] + compressed_part1 + compressed_part2
+            # prefix 없이 그대로 반환 (7.5"의 total_len 헤더와 동일한 위치)
+            _LOGGER.debug(
+                "Compress (1-bit dual plane BWR): raw=%s -> %s bytes, head32=%s",
+                len(raw),
+                len(compressed),
+                compressed[:32].hex() if len(compressed) >= 32 else compressed.hex(),
+            )
+            return list(compressed)
+        except Exception as e:
+            _LOGGER.warning("Compression failed: %s. Using uncompressed data.", e)
+            return list(raw)
+
     def _make_cmd_packet(self, cmd: int) -> bytes:
         if cmd == 0x02:
-            packet = bytearray(8)
-            packet[0] = cmd
-            struct.pack_into("<I", packet, 1, self.packet_size)
-            packet[-3:] = b"\x00\x00\x00"
-            return bytes(packet)
+            if self.compression2:
+                # 10.2" 등 compression2 디바이스: 6바이트 [02] [4B size LE] [01]
+                # Wireshark 확인: 02:4b:2a:01:00:01
+                packet = bytearray(6)
+                packet[0] = cmd
+                struct.pack_into("<I", packet, 1, self.packet_size)
+                packet[5] = 0x01  # compression2 모드 플래그
+                return bytes(packet)
+            else:
+                packet = bytearray(8)
+                packet[0] = cmd
+                struct.pack_into("<I", packet, 1, self.packet_size)
+                packet[-3:] = b"\x00\x00\x00"
+                return bytes(packet)
         return bytes([cmd])
 
     def _make_size_packet(self, part: int) -> bytes:
@@ -398,3 +458,34 @@ class GiciskyClient:
         struct.pack_into("<I", packet, 0, part)
         packet[4:] = bytes(chunk)
         return bytes(packet)
+
+
+def decompress_byte_data(payload: bytes, width: int, height: int) -> tuple[list[int], list[int] | None]:
+    """
+    _compress_byte_data() 출력 형식의 역연산.
+    compression=True 디바이스(예: 7.5" 0x2B) 패킷을 복원해 (byte_data, byte_data_red) 반환.
+    byte_data_red는 없으면 None.
+    """
+    if len(payload) < 4:
+        return ([], None)
+    byte_per_line = height // 8
+    chunk_header = 7  # 0x75, total_byte, uncompressed_byte, 0x00*4
+    chunk_size = chunk_header + byte_per_line
+    pos = 4
+    byte_data: list[int] = []
+    for _ in range(width):
+        if pos + chunk_size > len(payload) or payload[pos] != 0x75:
+            break
+        pos += chunk_header
+        byte_data.extend(payload[pos : pos + byte_per_line])
+        pos += byte_per_line
+    byte_data_red: list[int] | None = None
+    if pos < len(payload) and payload[pos] == 0x75:
+        byte_data_red = []
+        for _ in range(width):
+            if pos + chunk_size > len(payload) or payload[pos] != 0x75:
+                break
+            pos += chunk_header
+            byte_data_red.extend(payload[pos : pos + byte_per_line])
+            pos += byte_per_line
+    return (byte_data, byte_data_red)
