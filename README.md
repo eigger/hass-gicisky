@@ -590,6 +590,7 @@ Then reference them by filename only:
 | 4.2" (400×300) | 3D Print | ![4.2-3d-print.png](./examples/4.2-3d-print.png) | [4.2" 3D Print](./examples/4.2-3d-print.yaml) |
 | 7.5" (800×480) | Google Calendar | ![7.5-google-calendar.jpg](./examples/7.5-google-calendar.jpg) | [7.5" Google Calendar](./examples/7.5-google-calendar.yaml) |
 | 7.5" (800×480) | Date Weather | ![7.5-date-weather.jpg](./examples/7.5-date-weather.jpg) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
+| 10.2" (960×640) | Calendar Weather | ![10.2-calendar-weather.png](./examples/10.2-calendar-weather.png) | [10.2" Calendar Weather](./examples/10.2-calendar-weather.yaml) |
 
 ---
 
