@@ -591,6 +591,7 @@ Then reference them by filename only:
 | 7.5" (800×480) | Google Calendar | ![7.5-google-calendar.jpg](./examples/7.5-google-calendar.jpg) | [7.5" Google Calendar](./examples/7.5-google-calendar.yaml) |
 | 7.5" (800×480) | Date Weather | ![7.5-date-weather.jpg](./examples/7.5-date-weather.jpg) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
 | 10.2" (960×640) | Calendar Weather | ![10.2-calendar-weather.png](./examples/10.2-calendar-weather.png) | [10.2" Calendar Weather](./examples/10.2-calendar-weather.yaml) |
+| 10.2" (960×640) | Calendar | ![10.2-calendar.png](./examples/10.2-calendar.png) | [10.2" Calendar](./examples/10.2-calendar.yaml) |
 
 ---
 
