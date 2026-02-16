@@ -152,7 +152,7 @@ class GiciskyClient:
         # await self.write(uuid, packet)
         # return await self.read()
         last_exception = None
-        max_retries = 3
+        max_retries = 1
         for attempt in range(1, max_retries + 1):
             try:
                 self.command_data = None
