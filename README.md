@@ -64,6 +64,11 @@ beyond their traditional use cases.
 | EPD | 7.5" | 800 × 480 | BWR |
 | EPD | 10.2" | 960 × 640 | BWR |
 
+## Where to Buy
+
+- [AliExpress](https://ko.aliexpress.com/item/1005002398744297.html)
+- [AliExpress](https://ko.aliexpress.com/item/1005002399342939.html)
+
 ## Installation
 
 1. Install this integration with HACS (adding repository required), or copy the contents of this
