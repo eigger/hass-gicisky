@@ -6,9 +6,9 @@ Gicisky BLE Label Home Assistant Integration
 
 | Size | Example |
 |------|---------| 
-| 2.1" (250x128) | <img src="./docs/images/21_1.png" alt="2.1 inch" width="200" /> |
-| 2.9" (296x128) | <img src="./docs/images/29_1.png" alt="2.9 inch" width="200" /> |
-| 10.2" (960x640) | <img src="./docs/images/102_1.jpg" alt="10.2 inch" width="200" /> |
+| 2.1" (250x128) | <img src="https://raw.githubusercontent.com/eigger/hass-gicisky/master/docs/images/21_1.png" alt="2.1 inch" width="200" /> |
+| 2.9" (296x128) | <img src="https://raw.githubusercontent.com/eigger/hass-gicisky/master/docs/images/29_1.png" alt="2.9 inch" width="200" /> |
+| 10.2" (960x640) | <img src="https://raw.githubusercontent.com/eigger/hass-gicisky/master/docs/images/102_1.jpg" alt="10.2 inch" width="200" /> |
 
 ## What Is an Electronic Label?
 
@@ -577,21 +577,21 @@ Then reference them by filename only:
 
 | Size | Example | Preview | Yaml |
 |------|---------|---------|------|
-| 2.1" (250×128) | Date | ![2.1-date.jpg](./examples/2.1-date.jpg) | [2.1" Date](./examples/2.1-date.yaml) |
-| 2.1" (250×128) | Naver Weather | ![2.1-naver-weather.jpg](./examples/2.1-naver-weather.jpg) | [2.1" Naver Weather](./examples/2.1-naver-weather.yaml) |
-| 2.1" (250×128) | Waste Collection | ![2.1-waste-collection.png](./examples/2.1-waste-collection.png) | [2.1" Waste Collection](./examples/2.1-waste-collection.yaml) |
-| 2.1" (250×128) | Wifi | ![2.1-wifi.jpg](./examples/2.1-wifi.jpg) | [2.1" Wifi](./examples/2.1-wifi.yaml) |
-| 2.1" (250×128) | TMap time | ![2.1-tmap-time.jpg](./examples/2.1-tmap-time.jpg) | [2.1" TMap time](./examples/2.1-tmap-time.yaml) |
-| 2.9" (296×128) | Google Calendar | ![2.9-google-calendar.jpg](./examples/2.9-google-calendar.jpg) | [2.9" Google Calendar](./examples/2.9-google-calendar.yaml) |
-| 2.9" (296×128) | Presence Display | ![2.9-presence-display.jpg](./examples/2.9-presence-display.jpg) | [2.9" Presence Display](./examples/2.9-presence-display.yaml) |
-| 4.2" (400×300) | Image | ![4.2-image.jpg](./examples/4.2-image.jpg) | [4.2" Image](./examples/4.2-image.yaml) |
-| 4.2" (400×300) | Naver Weather | ![4.2-naver-weather.jpg](./examples/4.2-naver-weather.jpg) | [4.2" Naver Weather](./examples/4.2-naver-weather.yaml) |
-| 4.2" (400×300) | Date Weather | ![4.2-date-weather.jpg](./examples/4.2-date-weather.jpg) | [4.2" Date Weather](./examples/4.2-date-weather.yaml) |
-| 4.2" (400×300) | 3D Print | ![4.2-3d-print.png](./examples/4.2-3d-print.png) | [4.2" 3D Print](./examples/4.2-3d-print.yaml) |
-| 7.5" (800×480) | Google Calendar | ![7.5-google-calendar.jpg](./examples/7.5-google-calendar.jpg) | [7.5" Google Calendar](./examples/7.5-google-calendar.yaml) |
-| 7.5" (800×480) | Date Weather | ![7.5-date-weather.jpg](./examples/7.5-date-weather.jpg) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
-| 10.2" (960×640) | Calendar Weather | ![10.2-calendar-weather.png](./examples/10.2-calendar-weather.png) | [10.2" Calendar Weather](./examples/10.2-calendar-weather.yaml) |
-| 10.2" (960×640) | Calendar | ![10.2-calendar.png](./examples/10.2-calendar.png) | [10.2" Calendar](./examples/10.2-calendar.yaml) |
+| 2.1" (250×128) | Date | ![2.1-date.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.1-date.jpg) | [2.1" Date](./examples/2.1-date.yaml) |
+| 2.1" (250×128) | Naver Weather | ![2.1-naver-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.1-naver-weather.jpg) | [2.1" Naver Weather](./examples/2.1-naver-weather.yaml) |
+| 2.1" (250×128) | Waste Collection | ![2.1-waste-collection.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.1-waste-collection.png) | [2.1" Waste Collection](./examples/2.1-waste-collection.yaml) |
+| 2.1" (250×128) | Wifi | ![2.1-wifi.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.1-wifi.jpg) | [2.1" Wifi](./examples/2.1-wifi.yaml) |
+| 2.1" (250×128) | TMap time | ![2.1-tmap-time.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.1-tmap-time.jpg) | [2.1" TMap time](./examples/2.1-tmap-time.yaml) |
+| 2.9" (296×128) | Google Calendar | ![2.9-google-calendar.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.9-google-calendar.jpg) | [2.9" Google Calendar](./examples/2.9-google-calendar.yaml) |
+| 2.9" (296×128) | Presence Display | ![2.9-presence-display.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/2.9-presence-display.jpg) | [2.9" Presence Display](./examples/2.9-presence-display.yaml) |
+| 4.2" (400×300) | Image | ![4.2-image.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-image.jpg) | [4.2" Image](./examples/4.2-image.yaml) |
+| 4.2" (400×300) | Naver Weather | ![4.2-naver-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-naver-weather.jpg) | [4.2" Naver Weather](./examples/4.2-naver-weather.yaml) |
+| 4.2" (400×300) | Date Weather | ![4.2-date-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-date-weather.jpg) | [4.2" Date Weather](./examples/4.2-date-weather.yaml) |
+| 4.2" (400×300) | 3D Print | ![4.2-3d-print.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-3d-print.png) | [4.2" 3D Print](./examples/4.2-3d-print.yaml) |
+| 7.5" (800×480) | Google Calendar | ![7.5-google-calendar.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/7.5-google-calendar.jpg) | [7.5" Google Calendar](./examples/7.5-google-calendar.yaml) |
+| 7.5" (800×480) | Date Weather | ![7.5-date-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/7.5-date-weather.jpg) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
+| 10.2" (960×640) | Calendar Weather | ![10.2-calendar-weather.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/10.2-calendar-weather.png) | [10.2" Calendar Weather](./examples/10.2-calendar-weather.yaml) |
+| 10.2" (960×640) | Calendar | ![10.2-calendar.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/10.2-calendar.png) | [10.2" Calendar](./examples/10.2-calendar.yaml) |
 
 ---
 
