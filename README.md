@@ -66,8 +66,11 @@ beyond their traditional use cases.
 
 ## Where to Buy
 
-- [AliExpress](https://ko.aliexpress.com/item/1005002398744297.html)
-- [AliExpress](https://ko.aliexpress.com/item/1005002399342939.html)
+- In my country, I can purchase from the official site linked below, but I am not sure if it is available for purchase in all countries.
+
+- [AliExpress - Gicisky Official Store](https://ko.aliexpress.com/item/1005002399342939.html)
+- [AliExpress - Gicisky Official Store](https://ko.aliexpress.com/item/1005002398744297.html)
+
 
 ## Installation
 
