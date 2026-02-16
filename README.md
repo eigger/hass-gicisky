@@ -8,7 +8,7 @@ Gicisky BLE Label Home Assistant Integration
 |------|---------| 
 | 2.1" (250x128) | <img src="./docs/images/21_1.png" alt="2.1 inch" width="200" /> |
 | 2.9" (296x128) | <img src="./docs/images/29_1.png" alt="2.9 inch" width="200" /> |
-| 4.2" (400x300) | <img src="./docs/images/42_1.png" alt="4.2 inch" width="200" /> |
+| 10.2" (960x640) | <img src="./docs/images/102_1.jpg" alt="10.2 inch" width="200" /> |
 
 ## What Is an Electronic Label?
 
