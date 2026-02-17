@@ -108,6 +108,7 @@ After adding a device, you can configure the following options via **Settings > 
 |--------|---------|-------|-------------|
 | **Retry Count** | 3 | 1–10 | Number of retry attempts when BLE write fails |
 | **Write Delay (ms)** | 0 | 0–1000 | Delay in milliseconds between each BLE write operation |
+| **Prevent Duplicate Send** | false | true/false | If enabled, prevents sending the same image data consecutively to save battery and reduce traffic |
 
 > [!TIP]
 > If you experience frequent write failures, try increasing the **Retry Count**.  
