@@ -330,7 +330,10 @@ class GiciskyClient:
                 # Calculate weighted luminance for white detection
                 luminance = ((r * 38) + (g * 75) + (b * 15)) >> 7
                 
-                is_white = luminance > threshold
+                if self.invert_luminance:
+                    is_white = luminance < threshold
+                else:
+                    is_white = luminance > threshold
                 is_red = r > red_threshold
                 is_green = g > red_threshold
                 is_blue = b > red_threshold
@@ -407,7 +410,10 @@ class GiciskyClient:
             for x in x_range:
                 r, g, b = pixels[x, y]
                 luminance = (r * 38 + g * 75 + b * 15) >> 7
-                is_white = luminance > threshold
+                if self.invert_luminance:
+                    is_white = luminance < threshold
+                else:
+                    is_white = luminance > threshold
                 is_red = (r > red_threshold) and (g < red_threshold)
                 if is_white:
                     bw_plane[byte_idx] |= (1 << bit_pos)
