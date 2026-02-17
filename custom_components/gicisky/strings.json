@@ -25,7 +25,8 @@
       "init": {
         "data": {
           "retry_count": "Retry Count",
-          "write_delay_ms": "Write Delay (ms)"
+          "write_delay_ms": "Write Delay (ms)",
+          "prevent_duplicate_send": "Prevent Duplicate Send"
         }
       }
     }

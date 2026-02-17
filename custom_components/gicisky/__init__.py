@@ -31,8 +31,10 @@ from .const import (
     LOCK,
     CONF_RETRY_COUNT,
     CONF_WRITE_DELAY_MS,
+    CONF_PREVENT_DUPLICATE_SEND,
     DEFAULT_RETRY_COUNT,
     DEFAULT_WRITE_DELAY_MS,
+    DEFAULT_PREVENT_DUPLICATE_SEND,
 )
 from .coordinator import GiciskyPassiveBluetoothProcessorCoordinator
 from .types import GiciskyConfigEntry
@@ -118,6 +120,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
     hass.data[DOMAIN][entry.entry_id]['duration_coordinator'] = duration_coordinator
     hass.data[DOMAIN][entry.entry_id]['duration_task'] = None
     hass.data[DOMAIN][entry.entry_id]['start_time'] = None
+    hass.data[DOMAIN][entry.entry_id]['last_image_data'] = None
     connectivity_coordinator.async_set_updated_data(False)
     duration_coordinator.async_set_updated_data(0.0)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -162,6 +165,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 image_bytes = BytesIO()
                 image.save(image_bytes, "PNG")
                 preview_coordinator.async_set_updated_data(image_bytes.getvalue())
+
+                # Check for duplicate image
+                prevent_duplicate_send = options.get(CONF_PREVENT_DUPLICATE_SEND, DEFAULT_PREVENT_DUPLICATE_SEND)
+                current_image_data = image_bytes.getvalue()
+                last_image_data = hass.data[DOMAIN][entry_id].get('last_image_data')
+
+                if prevent_duplicate_send and current_image_data == last_image_data:
+                    _LOGGER.info(f"Skipping duplicate image for {address}")
+                    continue
+
+                hass.data[DOMAIN][entry_id]['last_image_data'] = current_image_data
+
                 # If dry_run is True, skip sending to the actual device
                 if dry_run:
                     continue

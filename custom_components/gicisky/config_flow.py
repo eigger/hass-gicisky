@@ -32,8 +32,10 @@ from .const import (
     DOMAIN,
     CONF_RETRY_COUNT,
     CONF_WRITE_DELAY_MS,
+    CONF_PREVENT_DUPLICATE_SEND,
     DEFAULT_RETRY_COUNT,
     DEFAULT_WRITE_DELAY_MS,
+    DEFAULT_PREVENT_DUPLICATE_SEND,
 )
 
 
@@ -55,6 +57,10 @@ OPTIONS_SCHEMA = {
             unit_of_measurement="ms",
         )
     ),
+    vol.Required(
+        CONF_PREVENT_DUPLICATE_SEND,
+        default=DEFAULT_PREVENT_DUPLICATE_SEND,
+    ): bool,
 }
 
 
