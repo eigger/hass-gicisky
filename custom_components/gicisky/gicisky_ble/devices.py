@@ -77,8 +77,9 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=800,
         height=480,
         mirror_y=True,
-        compression=True,
+        #compression=True,
         invert_luminance=True,
+        compression2=True,
         max_voltage=3.0
     ),
     0x8B: DeviceEntry(
