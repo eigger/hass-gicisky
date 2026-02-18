@@ -5,235 +5,188 @@ triggers:
     hours: /1
 conditions: []
 actions:
+  - action: calendar.get_events
+    target:
+      entity_id:
+        - calendar.google
+        - calendar.holidays
+    data:
+      duration:
+        hours: 24
+    response_variable: response
+  - variables:
+      font_bold: fonts/GmarketSansTTFBold.ttf
+      font_med: fonts/GmarketSansTTFMedium.ttf
+      month_str: "{{ now().strftime('%-m') }}월"
+      day_num: "{{ now().strftime('%d') }}"
+      weekday_kr: >
+        {% set days =
+        {'Monday':'월요일','Tuesday':'화요일','Wednesday':'수요일','Thursday':'목요일','Friday':'금요일','Saturday':'토요일','Sunday':'일요일'}
+        %} {{ days[now().strftime('%A')] }}
+      today_data: >
+        {% set current_date = now().strftime('%Y-%m-%d') %} {% set ns =
+        namespace(is_holiday=false, summary='일정 없음', start=none,
+        holiday_name=none) %}
+
+        {# 1. 주말 체크 #} {% if now().strftime('%w') in ['0', '6'] %}
+          {% set ns.is_holiday = true %}
+        {% endif %}
+
+        {# 2. 공휴일 캘린더 확인 #} {% set holidays =
+        response['calendar.holidays']['events'] %} {% for h in holidays %}
+          {% if h.start is string and h.start.startswith(current_date) %}
+            {% set ns.is_holiday = true %}
+            {% set ns.holiday_name = h.summary %} {# 공휴일 이름 저장 #}
+          {% endif %}
+        {% endfor %}
+
+        {# 3. 개인 일정 확인 #} {% set personal =
+        response['calendar.google']['events'] | sort(attribute='start') %} {%
+        for e in personal %}
+           {% if e.start is string and e.start.startswith(current_date) %}
+              {% set ns.summary = e.summary %}
+              {% set ns.start = e.start %}
+              {% break %}
+           {% endif %}
+        {% endfor %}
+
+        {# 4. 공휴일 이름 처리 (일정이 없을 때 하단 일정에 표시) #} {% if ns.summary == '일정 없음' and
+        ns.holiday_name is not none %}
+            {% set ns.summary = ns.holiday_name %}
+        {% endif %}
+
+        {{ {
+          'summary': ns.summary,
+          'start': ns.start,
+          'is_holiday': ns.is_holiday
+        } }}
+      weather_state: "{{ states('weather.tongbogdong') }}"
+      temp_cur: "{{ states('sensor.hyeonjaeondo') }}"
+      temp_min: "{{ states('sensor.coejeoondo') }}"
+      temp_max: "{{ states('sensor.coegoondo') }}"
+      rain_amount: "{{ states('sensor.sigandanggangsuryang') | float(0) }}"
+      rain_start: "{{ states('sensor.bisijagsiganoneul') }}"
+      weather_text: |
+        {% if rain_amount > 0 %}
+          비 {{ rain_amount }}mm
+        {% elif rain_start not in ['비안옴', 'unknown', 'unavailable'] %}
+          {{ rain_start }} 비 예보
+        {% else %}
+          비안옴
+        {% endif %}
+      color_num: white
+      color_point: |
+        {{ 'red' if today_data.is_holiday else 'white' }}
+      color_event: |
+        {{ 'red' if today_data.is_holiday else 'black' }}
+      color_rain: >
+        {{ 'red' if (rain_amount > 0) or (rain_start not in ['비안옴', 'unknown',
+        'unavailable']) else 'black' }}
   - action: gicisky.write
     data:
       rotate: 270
+      target:
+        entity_id: esphome.gicisky_display_75
       payload:
+        - type: rectangle
+          x_start: 0
+          y_start: 0
+          x_end: 480
+          y_end: 800
+          fill: white
+          outline: white
+        - type: rectangle
+          x_start: 0
+          y_start: 0
+          x_end: 480
+          y_end: 320
+          fill: black
+          outline: black
         - type: text
-          value: "{{ now().strftime('%H시') }} 기준"
-          font: fonts/CookieRunBold.ttf
-          anchor: rt
-          x: 450
-          "y": 20
-          size: 40
-          color: black
-        - type: text
-          value: "{{ now().strftime('%m월') }}"
-          font: fonts/CookieRunBold.ttf
-          anchor: lt
-          x: 20
-          "y": 20
-          size: 40
-          color: black
-        - type: text
-          value: "{{ now().strftime('%d') }}"
-          font: fonts/CookieRunBold.ttf
-          anchor: mt
-          x: 120
-          "y": 120
-          size: 180
-          color: |
-            {% set date = now().strftime('%A') %}
-            {{ 'red' if date == 'Saturday' or date == 'Sunday' else 'black' }}
-        - type: text
-          value: |
-            {% set day_map = {
-                'Monday': '월요일',
-                'Tuesday': '화요일',
-                'Wednesday': '수요일',
-                'Thursday': '목요일',
-                'Friday': '금요일',
-                'Saturday': '토요일',
-                'Sunday': '일요일'
-            } %} {{ day_map[now().strftime('%A')] }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mt
-          x: 360
-          "y": 100
-          size: 80
-          color: |
-            {% set date = now().strftime('%A') %}
-            {{ 'red' if date == 'Saturday' or date == 'Sunday' else 'black' }}
-        - type: text
-          value: "{{ state_attr('weather.naver', 'friendly_name') }}"
-          font: fonts/CookieRunBold.ttf
-          anchor: mt
-          x: 360
-          "y": 200
-          size: 80
-          color: black
-        - type: icon
-          value: |
-            weather-{{ states('weather.naver') }}
-          anchor: lb
+          value: "{{ month_str }}"
           x: 30
-          "y": 450
-          size: 180
-          color: black
-        - type: text
-          value: |
-            {{ states('sensor.hyeonjaeondo') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: rb
-          x: 390
-          "y": 390
-          size: 80
-          color: black
-        - type: text
-          value: |
-            {{ state_attr('sensor.hyeonjaeondo', 'unit_of_measurement') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: rb
-          x: 450
-          "y": 390
+          "y": 30
+          font: "{{ font_med }}"
           size: 40
+          color: white
+          anchor: lt
+        - type: text
+          value: "{{ day_num }}"
+          x: 240
+          "y": 160
+          font: "{{ font_bold }}"
+          size: 200
+          color: "{{ color_num }}"
+          anchor: mm
+        - type: text
+          value: "{{ weekday_kr }}"
+          x: 240
+          "y": 270
+          font: "{{ font_med }}"
+          size: 50
+          color: "{{ color_point }}"
+          anchor: mm
+        - type: icon
+          value: weather-{{ weather_state }}
+          x: 120
+          "y": 430
+          size: 140
           color: black
+          anchor: mm
+        - type: text
+          value: "{{ temp_cur }}°"
+          x: 360
+          "y": 410
+          font: "{{ font_bold }}"
+          size: 90
+          color: black
+          anchor: mm
+        - type: text
+          value: "{{ temp_min }}° / {{ temp_max }}°"
+          x: 360
+          "y": 470
+          font: "{{ font_med }}"
+          size: 35
+          color: black
+          anchor: mm
+        - type: text
+          value: "{{ weather_text }}"
+          x: 240
+          "y": 530
+          font: "{{ font_bold }}"
+          size: 40
+          color: "{{ color_rain }}"
+          anchor: mm
+        - type: line
+          x_start: 40
+          x_end: 440
+          y_start: 570
+          y_end: 570
+          width: 3
+          fill: black
+        - type: text
+          value: "{{ today_data.summary | truncate(10, true, '..') }}"
+          x: 240
+          "y": 650
+          font: "{{ font_bold }}"
+          size: 60
+          color: "{{ color_event }}"
+          anchor: mm
         - type: text
           value: |
-            {{ states('sensor.coejeoondo') }} / {{ states('sensor.coegoondo') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: rb
-          x: 390
-          "y": 435
+            {% if today_data.start and 'T' in today_data.start %}
+              {{ as_timestamp(today_data.start) | timestamp_custom('%H:%M') }}
+            {% elif today_data.summary == '일정 없음' %}
+              -
+            {% else %}
+              종일
+            {% endif %}
+          x: 240
+          "y": 730
+          font: "{{ font_med }}"
           size: 40
-          color: black
-        - type: text
-          value: "{{ states('sensor.hyeonjaenalssijeongbo') }}"
-          font: fonts/OwnglyphParkDaHyun.ttf
-          anchor: mt
-          x: 240
-          "y": 500
-          size: 45
-          color: black
-        - type: text
-          value: >
-            {% set rain = states('sensor.sigandanggangsuryang') %} {% set start
-            = states('sensor.bisijagsiganoneul') %} {{ '비 ' + rain + 'mm' if
-            rain != '0' else start + ' 비 예보' if start != '비안옴' else start }}
-          font: fonts/OwnglyphParkDaHyun.ttf
-          anchor: mt
-          x: 240
-          "y": 550
-          size: 80
-          color: |
-            {% set rain = states('sensor.sigandanggangsuryang') %}
-            {% set start = states('sensor.bisijagsiganoneul') %}
-            {{ 'red' if rain != '0' else 'red' if start != '비안옴' else 'black' }}
-        - type: text
-          value: 거실
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 60
-          "y": 730
-          size: 35
-          color: black
-        - type: text
-          value: 안방
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 150
-          "y": 730
-          size: 35
-          color: black
-        - type: text
-          value: 방1
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 240
-          "y": 730
-          size: 35
-          color: black
-        - type: text
-          value: 방2
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 330
-          "y": 730
-          size: 35
-          color: black
-        - type: text
-          value: 거실2
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 420
-          "y": 730
-          size: 35
-          color: black
-        - type: text
-          value: >
-            {{ state_attr('climate.esp_kocom_livingroom_heater',
-            'current_temperature') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 60
-          "y": 780
-          size: 50
-          color: |
-            {% if is_state('climate.esp_kocom_livingroom_heater', 'off') %}
-              black
-            {% else %}
-              red
-            {% endif %}
-        - type: text
-          value: >
-            {{ state_attr('climate.esp_kocom_bedroom_heater',
-            'current_temperature') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 150
-          "y": 780
-          size: 50
-          color: |
-            {% if is_state('climate.esp_kocom_bedroom_heater', 'off') %}
-              black
-            {% else %}
-              red
-            {% endif %}
-        - type: text
-          value: >
-            {{ state_attr('climate.esp_kocom_room_1_heater',
-            'current_temperature') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 240
-          "y": 780
-          size: 50
-          color: |
-            {% if is_state('climate.esp_kocom_room_1_heater', 'off') %}
-              black
-            {% else %}
-              red
-            {% endif %}
-        - type: text
-          value: >
-            {{ state_attr('climate.esp_kocom_room_2_heater',
-            'current_temperature') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 330
-          "y": 780
-          size: 50
-          color: |
-            {% if is_state('climate.esp_kocom_room_2_heater', 'off') %}
-              black
-            {% else %}
-              red
-            {% endif %}
-        - type: text
-          value: >
-            {{ state_attr('climate.esp_kocom_livingroom_2_heater',
-            'current_temperature') }}
-          font: fonts/CookieRunBold.ttf
-          anchor: mb
-          x: 420
-          "y": 780
-          size: 50
-          color: |
-            {% if is_state('climate.esp_kocom_livingroom_2_heater', 'off') %}
-              black
-            {% else %}
-              red
-            {% endif %}
+          color: "{{ color_event }}"
+          anchor: mm
     target:
       device_id: 2766ccde02539d2b8cfe034556aa95ae
     enabled: true

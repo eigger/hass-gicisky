@@ -1,4 +1,4 @@
-alias: 7.5 4696 종합
+alias: 7.5 종합
 description: ""
 triggers:
   - trigger: time_pattern

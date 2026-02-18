@@ -598,7 +598,7 @@ Then reference them by filename only:
 | 4.2" (400×300) | Date Weather | ![4.2-date-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-date-weather.jpg) | [4.2" Date Weather](./examples/4.2-date-weather.yaml) |
 | 4.2" (400×300) | 3D Print | ![4.2-3d-print.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/4.2-3d-print.png) | [4.2" 3D Print](./examples/4.2-3d-print.yaml) |
 | 7.5" (800×480) | Google Calendar | ![7.5-google-calendar.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/7.5-google-calendar.jpg) | [7.5" Google Calendar](./examples/7.5-google-calendar.yaml) |
-| 7.5" (800×480) | Date Weather | ![7.5-date-weather.jpg](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/7.5-date-weather.jpg) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
+| 7.5" (800×480) | Date Weather | ![7.5-date-weather.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/7.5-date-weather.png) | [7.5" Date Weather](./examples/7.5-date-weather.yaml) |
 | 10.2" (960×640) | Calendar Weather | ![10.2-calendar-weather.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/10.2-calendar-weather.png) | [10.2" Calendar Weather](./examples/10.2-calendar-weather.yaml) |
 | 10.2" (960×640) | Calendar | ![10.2-calendar.png](https://raw.githubusercontent.com/eigger/hass-gicisky/master/examples/10.2-calendar.png) | [10.2" Calendar](./examples/10.2-calendar.yaml) |
 
