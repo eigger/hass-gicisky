@@ -457,7 +457,13 @@ async def async_setup_entry(
 
     # Add Duration sensor
     duration_coordinator = hass.data[DOMAIN][entry.entry_id]["duration_coordinator"]
-    async_add_entities([GiciskyDurationSensorEntity(hass, entry, duration_coordinator)])
+    failure_coordinator = hass.data[DOMAIN][entry.entry_id]["failure_coordinator"]
+    last_failure_coordinator = hass.data[DOMAIN][entry.entry_id]["last_failure_coordinator"]
+    async_add_entities([
+        GiciskyDurationSensorEntity(hass, entry, duration_coordinator),
+        GiciskyFailureCountSensorEntity(hass, entry, failure_coordinator),
+        GiciskyLastFailureTimeSensorEntity(hass, entry, last_failure_coordinator),
+    ])
 
 
 class GiciskyBluetoothSensorEntity(
@@ -535,4 +541,92 @@ class GiciskyDurationSensorEntity(
         _LOGGER.debug("Updated duration data: %s", self.data)
         self._native_value = self.data
         super()._handle_coordinator_update()
+
+
+class GiciskyFailureCountSensorEntity(
+    CoordinatorEntity[DataUpdateCoordinator[int]],
+    SensorEntity,
+):
+    """Representation of a Gicisky BLE write failure count sensor."""
+
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_icon = "mdi:alert-circle"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        coordinator: DataUpdateCoordinator[int],
+    ) -> None:
+        """Initialize the failure count sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        address = hass.data[DOMAIN][entry.entry_id]["address"]
+        self._address = address
+        self._identifier = address.replace(":", "")[-8:]
+        self._attr_name = f"Gicisky {self._identifier} Failure Count"
+        self._attr_unique_id = f"gicisky_{self._identifier}_failure_count"
+        self._native_value: int = 0
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the native value."""
+        return self.coordinator.data
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            connections={(CONNECTION_BLUETOOTH, self._address)},
+            name=f"Gicisky {self._identifier}",
+            manufacturer="Gicisky",
+        )
+
+    @cached_property
+    def available(self) -> bool:
+        """Entity always available."""
+        return True
+
+
+class GiciskyLastFailureTimeSensorEntity(
+    CoordinatorEntity[DataUpdateCoordinator[datetime | None]],
+    SensorEntity,
+):
+    """Representation of a Gicisky BLE write last failure time sensor."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-alert"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        coordinator: DataUpdateCoordinator[datetime | None],
+    ) -> None:
+        """Initialize the last failure time sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        address = hass.data[DOMAIN][entry.entry_id]["address"]
+        self._address = address
+        self._identifier = address.replace(":", "")[-8:]
+        self._attr_name = f"Gicisky {self._identifier} Last Failure Time"
+        self._attr_unique_id = f"gicisky_{self._identifier}_last_failure_time"
+        self._native_value: datetime | None = None
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the native value."""
+        return self.coordinator.data
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            connections={(CONNECTION_BLUETOOTH, self._address)},
+            name=f"Gicisky {self._identifier}",
+            manufacturer="Gicisky",
+        )
+
+    @cached_property
+    def available(self) -> bool:
+        """Entity always available."""
+        return True
 
