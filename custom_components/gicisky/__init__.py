@@ -24,6 +24,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceRegistry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util.signal_type import SignalType
+from homeassistant.util.dt import now
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
@@ -113,16 +114,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         _LOGGER,
         name=DOMAIN,
     )
+    failure_coordinator: DataUpdateCoordinator[int] = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+    )
+    last_failure_coordinator: DataUpdateCoordinator[datetime | None] = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+    )
     entry.runtime_data = bt_coordinator
     hass.data[DOMAIN][entry.entry_id]['image_coordinator'] = image_coordinator
     hass.data[DOMAIN][entry.entry_id]['preview_coordinator'] = preview_coordinator
     hass.data[DOMAIN][entry.entry_id]['connectivity_coordinator'] = connectivity_coordinator
     hass.data[DOMAIN][entry.entry_id]['duration_coordinator'] = duration_coordinator
+    hass.data[DOMAIN][entry.entry_id]['failure_coordinator'] = failure_coordinator
+    hass.data[DOMAIN][entry.entry_id]['last_failure_coordinator'] = last_failure_coordinator
     hass.data[DOMAIN][entry.entry_id]['duration_task'] = None
     hass.data[DOMAIN][entry.entry_id]['start_time'] = None
     hass.data[DOMAIN][entry.entry_id]['last_image_data'] = None
     connectivity_coordinator.async_set_updated_data(False)
     duration_coordinator.async_set_updated_data(0.0)
+    failure_coordinator.async_set_updated_data(0)
+    last_failure_coordinator.async_set_updated_data(None)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def update_duration_loop(entry_id: str):
@@ -158,6 +173,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
                 connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
                 duration_coordinator = hass.data[DOMAIN][entry_id]['duration_coordinator']
+                failure_coordinator = hass.data[DOMAIN][entry_id]['failure_coordinator']
+                last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
                 ble_device = async_ble_device_from_address(hass, address)
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
@@ -201,6 +218,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                         if attempt < max_retries:
                             await sleep(1)
                         else:
+                            # Update failure sensors
+                            current_count = failure_coordinator.data if failure_coordinator.data else 0
+                            failure_coordinator.async_set_updated_data(current_count + 1)
+                            last_failure_coordinator.async_set_updated_data(now())
                             raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
                 finally:
                     # Stop duration tracking
