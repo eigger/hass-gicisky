@@ -51,10 +51,10 @@ class GiciskyBluetoothDeviceData(BluetoothData):
             return False
 
         # determine the device type
-        device_id = data[0]
+        device_id = ((data[4] << 8) | data[0]) & 0x3FFF
         battery = data[1]
         firmware = (data[2] << 8) + data[3]
-        hardware = (data[0] << 8) + data[4]
+        hardware = ((data[4] << 8) | data[0])
         try:
             device = DEVICE_TYPES[device_id]
         except KeyError:
