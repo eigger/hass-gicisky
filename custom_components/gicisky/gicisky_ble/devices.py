@@ -104,7 +104,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         name="EPD 21",
         model="EPD 2.1\" BWR",
         width=250,
-        height=122,
+        height=128,
         rotation=270,
         mirror_x=True
     ),
