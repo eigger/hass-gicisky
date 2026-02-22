@@ -130,8 +130,9 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         model="EPD 3.7\" BWR",
         width=240,
         height=416,
-        compression=True,
+        rotation=180,
         mirror_x=True,
+        compression=True,
         max_voltage=3.0
     ),
     0x004E: DeviceEntry(
