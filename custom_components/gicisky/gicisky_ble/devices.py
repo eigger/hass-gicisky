@@ -108,6 +108,15 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         rotation=270,
         mirror_x=True
     ),
+    0x0028: DeviceEntry(
+        name="EPD 29",
+        model="EPD 2.9\" BW",
+        width=296,
+        height=128,
+        rotation=90,
+        red=False,
+        max_voltage=3.0
+    ),
     0x0033: DeviceEntry(
         name="EPD 29",
         model="EPD 2.9\" BWR",
