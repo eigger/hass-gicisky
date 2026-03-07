@@ -176,6 +176,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 failure_coordinator = hass.data[DOMAIN][entry_id]['failure_coordinator']
                 last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
                 ble_device = async_ble_device_from_address(hass, address)
+
+                if data.device is None or data.device.width is None or data.device.height is None:
+                    _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
+                    continue
+
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
                 image = await hass.async_add_executor_job(customimage, entry_id, data.device, service, hass)
