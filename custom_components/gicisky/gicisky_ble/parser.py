@@ -7,7 +7,7 @@ from sensor_state_data import (
     SensorLibrary,
 )
 
-from .devices import DEVICE_TYPES, DeviceEntry
+from .devices import get_device, DeviceEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,9 +55,8 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         battery = data[1]
         firmware = (data[2] << 8) + data[3]
         hardware = ((data[4] << 8) | data[0])
-        try:
-            device = DEVICE_TYPES[device_id]
-        except KeyError:
+        device = get_device(device_id, firmware)
+        if device is None:
             _LOGGER.error("Unknown Gicisky device found. Data: %s", data.hex())
             return False
 
