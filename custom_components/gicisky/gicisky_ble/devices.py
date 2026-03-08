@@ -180,9 +180,22 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
     ),
 }
 
+def get_device(device_id: int, firmware: int) -> DeviceEntry | None:
+    if device_id not in DEVICE_TYPES:
+        return None
+    device = DEVICE_TYPES[device_id]
+    
+    # Specific fix for 7.5 inch using older compression (e.g. 0x8101 firmware)
+    if device_id == 0x012B and firmware == 0x8101:
+        return dataclasses.replace(device, compression=True, compression2=False)
+
+    return device
+
+
 #2.1 0x0B 0x1D 0x81 0x01 0x41
 #2.9 0x33 0x1D 0x81 0x01 0x40
 #3.7 0x2B 0x1E 0x81 0x01 0x02
 #4.2 0x4B 0x1E 0x81 0x01 0x40
 #7.5 0x2B 0x1E 0x01 0x01 0x01
 #10.2 0x8B 0x1F 0x01 0x01 0x00
+
