@@ -21,6 +21,7 @@
   "version": "1.7.1",
   "requirements": [
     "qrcode[pil]==7.4.2",
-    "python-barcode==0.15.1"
+    "python-barcode==0.15.1",
+    "pyStrich==0.9"
   ]
 }
