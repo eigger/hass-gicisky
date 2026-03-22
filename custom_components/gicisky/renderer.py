@@ -668,16 +668,32 @@ def render_image(entity_id, device, service, hass):
                 from pystrich.datamatrix import DataMatrixEncoder
             except ImportError:
                 raise HomeAssistantError("datamatrix requires 'pyStrich'. Add 'pyStrich' to your requirements.")
-            data = element['data']
+            data = str(element['data'])
             pos_x = element['x']
             pos_y = element['y']
-            boxsize = element.get('boxsize', 4)
+            color = element.get('color', "black")
+            bgcolor = element.get('bgcolor', "white")
+            boxsize = element.get('boxsize', 2)
+
             encoder = DataMatrixEncoder(data)
-            encoder.save("/tmp/_gicisky_dm_tmp.png", cellsize=boxsize)
-            imgdm = Image.open("/tmp/_gicisky_dm_tmp.png").convert("RGBA")
-            temp_image = Image.new("RGBA", img.size)
-            temp_image.paste(imgdm, (pos_x, pos_y), imgdm)
-            img = Image.alpha_composite(img, temp_image)
+            dm_image = Image.open(BytesIO(encoder.get_imagedata(cellsize=boxsize)))
+
+            if color != "black" or bgcolor != "white":
+                dm_image = dm_image.convert("RGBA")
+                data_pixels = list(dm_image.getdata())
+                new_data = []
+                target_color = getIndexColor(color)
+                target_bg = getIndexColor(bgcolor)
+                for item in data_pixels:
+                    if item[0] < 128:  # Black / Foreground
+                        new_data.append(target_color)
+                    else:  # White / Background
+                        new_data.append(target_bg)
+                dm_image.putdata(new_data)
+            else:
+                dm_image = dm_image.convert("RGBA")
+
+            img.paste(dm_image, (pos_x, pos_y), dm_image)
             img.convert('RGBA')
 
         # ── diagram ───────────────────────────────────────────────────────────

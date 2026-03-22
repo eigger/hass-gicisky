@@ -567,15 +567,14 @@ Reads entity history from **Home Assistant Recorder**.
 
 #### datamatrix
 
-> [!IMPORTANT]
-> Requires `pyStrich` library. It is included in `manifest.json` and will be installed automatically via HACS.
-
 ```yaml
 - type: datamatrix
   data: "https://home-assistant.io"
   x: 10
   y: 10
-  boxsize: 4            # Pixel size of each cell (default: 4)
+  boxsize: 2            # Pixel size of each cell (default: 2)
+  color: black
+  bgcolor: white
 ```
 
 ---
@@ -656,7 +655,7 @@ target:
 | **dlimg**             | `x`, `y`, `url`, `xsize`, `ysize`                                                         | `rotate`(0), `mode`(stretch)                                                                                                                | Loads image from URL, local path, or Base64. `mode`: `stretch`/`fit`/`fill`/`contain`. |
 | **qrcode**            | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `border`(1), `boxsize`(2)                                                                                | Generates and embeds a QR code.                                  |
 | **barcode**           | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `code`(code128), `module_width`(0.2), `module_height`(7), `quiet_zone`(6.5), `font_size`(5), `text_distance`(5.0), `write_text`(true) | Draws various barcode formats.                |
-| **datamatrix**        | `x`, `y`, `data`                                                                          | `boxsize`(4)                                                                                                                                | Generates a DataMatrix 2D barcode. Requires `pyStrich`.          |
+| **datamatrix**        | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `boxsize`(2)                                                                                              | Generates a DataMatrix 2D barcode. Requires `pyStrich`.          |
 | **diagram**           | `x`, `y`, `height`                                                                        | `width`(canvas), `margin`(20), `font`, `bars`                                                                                              | Creates a bar chart. `bars` object: `values`(required, `"name,val;..."`) `color`(required), `margin`(10), `legend_size`(10), `legend_color`(black). |
 | **plot**              | `data`([{`entity`}])                                                                      | `duration`(86400), `x_start`(0), `y_start`(0), `x_end`, `y_end`, `size`(10), `font`, `low`, `high`, `ylegend`, `yaxis`, `xlegend`, `debug`(false) | Time-series graph from HA Recorder. Per-series: `entity`(required), `color`(black), `width`(1), `joint`, `area_fill`. |
 | **progress_bar**      | `x_start`, `x_end`, `y_start`, `y_end`, `progress`                                        | `direction`(right), `background`(white), `fill`(red), `outline`(black), `width`(1), `radius`(0), `show_percentage`(false)                   | Draws a progress bar. `direction`: right/left/up/down. `radius` for rounded corners. |
