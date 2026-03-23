@@ -196,6 +196,10 @@ target:
 > [!TIP]
 > All elements support the `visible` field (`true`/`false`) to conditionally show or hide them.
 
+> [!NOTE]
+> **Color values**: This is an **e-ink display** that only supports 4 colors: `white`, `black`, `red`, `yellow`.
+> HEX strings (`#RRGGBB`) are accepted as a convenience but will be **automatically mapped to the nearest supported color**.
+
 #### text
 
 ```yaml
@@ -212,6 +216,9 @@ target:
   stroke_width: 1
   stroke_fill: white
   max_width: 200        # Auto-wrap text within this pixel width
+  rotation: 45          # Rotate text by angle (degrees counter-clockwise)
+  background: "#CCCCCC" # Optional background color behind text
+  background_padding: 3 # Padding around background (default: 2)
 ```
 
 If `y` is omitted the element stacks below the previous element automatically (`y_padding` controls the gap, default `10`).
@@ -243,6 +250,7 @@ If `y` is omitted the element stacks below the previous element automatically (`
   y_end: 64
   fill: black
   width: 2
+  dash: [10, 5]     # Optional: [on_px, off_px] for dashed/dotted lines
 ```
 
 If `y_start` is omitted the line is drawn at the current auto-stack Y position (`y_padding` offset).
@@ -326,6 +334,12 @@ Uses [Material Design Icons](https://pictogrammers.com/library/mdi/). You can us
 
 Supports **HTTP/HTTPS URLs**, **local file paths**, and **Base64 data URIs**.
 
+| `mode` | Description |
+|--------|-------------|
+| `stretch` | Stretch to fill exactly (default) |
+| `fit` / `contain` | Scale preserving aspect ratio, pad with transparency |
+| `fill` | Scale and crop to fill exactly, no padding |
+
 ```yaml
 - type: dlimg
   url: "https://example.com/image.png"
@@ -334,6 +348,7 @@ Supports **HTTP/HTTPS URLs**, **local file paths**, and **Base64 data URIs**.
   xsize: 100
   ysize: 100
   rotate: 0
+  mode: fit             # stretch / fit / fill / contain
 ```
 
 ```yaml
@@ -415,6 +430,7 @@ Reads entity history from **Home Assistant Recorder**.
     - entity: sensor.temperature
       color: black
       width: 2
+      area_fill: "#CCCCCC"  # Optional: fill area under the line
   duration: 86400          # Seconds (default: 86400 = 1 day)
   x_start: 30
   y_start: 10
@@ -435,6 +451,11 @@ Reads entity history from **Home Assistant Recorder**.
     tick_every: 5
     grid: 5
     grid_color: black
+  xlegend:                 # Optional: time labels on X-axis
+    ticks: 3               # Number of labels (default: 3)
+    format: "%H:%M"        # strftime format (default: "%H:%M")
+    color: black
+    size: 9
   debug: false
 ```
 
@@ -452,7 +473,108 @@ Reads entity history from **Home Assistant Recorder**.
   fill: red
   outline: black
   width: 1
+  radius: 8                 # Optional: rounded corners radius
   show_percentage: true
+```
+
+#### arc
+
+```yaml
+- type: arc
+  x_start: 10
+  y_start: 10
+  x_end: 110
+  y_end: 110
+  start_angle: 0
+  end_angle: 270
+  outline: black
+  width: 3
+  pie: false            # true = pieslice (filled wedge), false = arc only
+  fill: "#CCCCCC"       # Only used when pie: true
+```
+
+#### gauge
+
+```yaml
+- type: gauge
+  x: 120                # Center X
+  y: 80                 # Center Y
+  radius: 60
+  progress: 72          # Current value (mapped between min_value and max_value)
+  min_value: 0
+  max_value: 100
+  fill: black           # Progress arc color
+  background: white     # Track (background arc) color
+  outline: black
+  width: 8              # Arc bar thickness
+  show_value: true      # Display numeric value at center
+  font: "fonts/NotoSansKR-Regular.ttf"
+  size: 18
+  color: black
+```
+
+#### polygon
+
+```yaml
+- type: polygon
+  points: "10,100;60,10;110,100"   # Semicolon-separated x,y pairs
+  fill: black
+  outline: black
+  width: 1
+```
+
+#### table
+
+```yaml
+- type: table
+  x: 10
+  y: 50
+  columns: [80, 120, 80]           # Column widths in pixels
+  rows:
+    - ["TIME", "EVENT", "PLACE"]   # First row treated as header if header: true
+    - ["09:00", "Meeting", "3F"]
+    - ["14:00", "Lunch", "B1"]
+  header: true                     # First row is a header (default: true)
+  header_fill: black
+  header_color: white
+  cell_color: black
+  cell_fill: null                  # Optional background for data rows
+  border_color: black
+  border_width: 1
+  row_height: 22
+  padding: 4
+  font: "fonts/NotoSansKR-Regular.ttf"
+  font_size: 14
+  align: left                      # left / center / right
+```
+
+#### text_box
+
+```yaml
+- type: text_box
+  value: "ON"
+  x: 10
+  y: 10
+  size: 18
+  font: "fonts/NotoSansKR-Regular.ttf"
+  padding: 6            # Padding around text
+  fill: black           # Box background color
+  color: white          # Text color
+  outline: black        # Box border color
+  width: 1              # Border width
+  radius: 6             # Corner radius
+```
+
+#### datamatrix
+
+```yaml
+- type: datamatrix
+  data: "https://home-assistant.io"
+  x: 10
+  y: 10
+  boxsize: 2            # Pixel size of each cell (default: 2)
+  color: black
+  bgcolor: white
 ```
 
 ---
@@ -517,20 +639,26 @@ target:
 
 | **Type**              | **Required Fields**                                                                       | **Optional Fields**                                                                                                                        | **Description**                                                 |
 | --------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| **text**              | `x`, `value`                                                                              | `y`, `size`(20), `font`, `color`(black), `anchor`(lt), `align`(left), `spacing`(5), `stroke_width`(0), `stroke_fill`(white), `max_width`, `y_padding`(10) | Draws text (auto-wrap if `max_width` provided). Auto-stacks if `y` omitted. |
+| **text**              | `x`, `value`                                                                              | `y`, `size`(20), `font`, `color`(black), `anchor`(lt), `align`(left), `spacing`(5), `stroke_width`(0), `stroke_fill`(white), `max_width`, `y_padding`(10), `rotation`(0), `background`, `background_padding`(2) | Draws text. Supports rotation and background fill. Auto-stacks if `y` omitted. |
 | **multiline**         | `x`, `value`, `delimiter`, `offset_y`                                                     | `start_y`, `size`(20), `font`, `color`(black), `anchor`(lm), `stroke_width`(0), `stroke_fill`(white), `y_padding`(10)                      | Splits text by delimiter and draws each line with `offset_y` spacing. |
-| **line**              | `x_start`, `x_end`                                                                        | `y_start`, `y_end`, `fill`(black), `width`(1), `y_padding`(0)                                                                              | Draws a straight line. Auto-stacks if `y_start` omitted.        |
+| **line**              | `x_start`, `x_end`                                                                        | `y_start`, `y_end`, `fill`(black), `width`(1), `y_padding`(0), `dash`([on,off])                                                            | Draws a straight line. `dash` for dashed/dotted style. Auto-stacks if `y_start` omitted. |
 | **rectangle**         | `x_start`, `x_end`, `y_start`, `y_end`                                                    | `fill`, `outline`(black), `width`(1), `radius`(0), `corners`(all)                                                                          | Draws a rectangle with optional rounded corners.                 |
 | **rectangle_pattern** | `x_start`, `y_start`, `x_size`, `y_size`, `x_repeat`, `y_repeat`, `x_offset`, `y_offset`  | `fill`, `outline`(black), `width`(1), `radius`(0), `corners`(all)                                                                          | Repeated grid of rectangles (pattern/tiling).                    |
 | **circle**            | `x`, `y`, `radius`                                                                        | `fill`, `outline`(black), `width`(1)                                                                                                       | Draws a circle at center (`x`, `y`).                             |
 | **ellipse**           | `x_start`, `x_end`, `y_start`, `y_end`                                                    | `fill`, `outline`(black), `width`(1)                                                                                                       | Draws an ellipse inside a bounding box.                          |
-| **icon**              | `x`, `y`, `value`, `size`                                                                 | `color`/`fill`(black), `anchor`(la), `stroke_width`(0), `stroke_fill`(white)                                                               | Draws [Material Design Icons](https://pictogrammers.com/library/mdi/). Supports `mdi:` prefix. |
-| **dlimg**             | `x`, `y`, `url`, `xsize`, `ysize`                                                         | `rotate`(0)                                                                                                                                | Loads image from URL, local path, or Base64 data URI.            |
+| **arc**               | `x_start`, `y_start`, `x_end`, `y_end`, `start_angle`, `end_angle`                        | `fill`, `outline`(black), `width`(1), `pie`(false)                                                                                          | Draws an arc or filled pieslice. `pie: true` for filled wedge.  |
+| **gauge**             | `x`, `y`, `radius`, `progress`                                                             | `min_value`(0), `max_value`(100), `fill`(black), `background`(white), `outline`(black), `width`(8), `show_value`(false), `font`, `size`(16), `color`(black) | Circular gauge (270° sweep). Shows progress as arc. |
+| **polygon**           | `points`                                                                                  | `fill`, `outline`(black), `width`(1)                                                                                                        | Draws a polygon. `points`: `"x1,y1;x2,y2;..."` format.         |
+| **table**             | `x`, `y`, `columns`, `rows`                                                                | `header`(true), `header_fill`(black), `header_color`(white), `cell_color`(black), `cell_fill`, `border_color`(black), `border_width`(1), `row_height`, `padding`(4), `font`, `font_size`(14), `align`(left) | Draws a bordered table with optional header row. |
+| **text_box**          | `x`, `y`, `value`                                                                         | `size`(20), `font`, `padding`(5), `fill`(black), `color`(white), `outline`, `width`(1), `radius`(5)                                         | Draws text inside a rounded, filled background box.             |
+| **icon**              | `x`, `y`, `value`, `size`                                                                 | `color`/`fill`(black), `anchor`(la), `stroke_width`(0), `stroke_fill`(white)                                                               | Draws [Material Design Icons](https://pictogrammers.com/library/mdi/). Supports `mdi:` prefix. MDI metadata is cached. |
+| **dlimg**             | `x`, `y`, `url`, `xsize`, `ysize`                                                         | `rotate`(0), `mode`(stretch)                                                                                                                | Loads image from URL, local path, or Base64. `mode`: `stretch`/`fit`/`fill`/`contain`. |
 | **qrcode**            | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `border`(1), `boxsize`(2)                                                                                | Generates and embeds a QR code.                                  |
 | **barcode**           | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `code`(code128), `module_width`(0.2), `module_height`(7), `quiet_zone`(6.5), `font_size`(5), `text_distance`(5.0), `write_text`(true) | Draws various barcode formats.                |
+| **datamatrix**        | `x`, `y`, `data`                                                                          | `color`(black), `bgcolor`(white), `boxsize`(2)                                                                                              | Generates a DataMatrix 2D barcode. Requires `pyStrich`.          |
 | **diagram**           | `x`, `y`, `height`                                                                        | `width`(canvas), `margin`(20), `font`, `bars`                                                                                              | Creates a bar chart. `bars` object: `values`(required, `"name,val;..."`) `color`(required), `margin`(10), `legend_size`(10), `legend_color`(black). |
-| **plot**              | `data`([{`entity`}])                                                                      | `duration`(86400), `x_start`(0), `y_start`(0), `x_end`, `y_end`, `size`(10), `font`, `low`, `high`, `ylegend`, `yaxis`, `debug`(false)      | Time-series graph from HA Recorder. Per-series: `entity`(required), `color`(black), `width`(1), `joint`. |
-| **progress_bar**      | `x_start`, `x_end`, `y_start`, `y_end`, `progress`                                        | `direction`(right), `background`(white), `fill`(red), `outline`(black), `width`(1), `show_percentage`(false)                                | Draws a progress bar. `direction`: right/left/up/down.           |
+| **plot**              | `data`([{`entity`}])                                                                      | `duration`(86400), `x_start`(0), `y_start`(0), `x_end`, `y_end`, `size`(10), `font`, `low`, `high`, `ylegend`, `yaxis`, `xlegend`, `debug`(false) | Time-series graph from HA Recorder. Per-series: `entity`(required), `color`(black), `width`(1), `joint`, `area_fill`. |
+| **progress_bar**      | `x_start`, `x_end`, `y_start`, `y_end`, `progress`                                        | `direction`(right), `background`(white), `fill`(red), `outline`(black), `width`(1), `radius`(0), `show_percentage`(false)                   | Draws a progress bar. `direction`: right/left/up/down. `radius` for rounded corners. |
 
 ### `plot` Sub-Objects
 
@@ -547,6 +675,12 @@ target:
 | | `tick_every` | `1` | Tick interval (value unit) |
 | | `grid` | `5` | Grid dot spacing (pixels) |
 | | `grid_color` | `black` | Grid color |
+| **xlegend** | `ticks` | `3` | Number of time labels |
+| | `format` | `"%H:%M"` | strftime format string |
+| | `color` | `black` | Label text color |
+| | `size` | (inherits) | Label font size |
+| | `font` | (inherits) | Label font file |
+| **data item** | `area_fill` | `null` | Fill color for area under the line |
 
 ---
 

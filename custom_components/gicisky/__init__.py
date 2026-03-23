@@ -9,7 +9,7 @@ import asyncio
 from asyncio import sleep, Lock
 from io import BytesIO
 
-from .imagegen import *
+from .renderer import *
 from .gicisky_ble import GiciskyBluetoothDeviceData, SensorUpdate
 from .gicisky_ble.writer import update_image
 from homeassistant.components.bluetooth import (
@@ -183,7 +183,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
                 threshold = int(service.data.get("threshold", 128))
                 red_threshold = int(service.data.get("red_threshold", 128))
-                image = await hass.async_add_executor_job(customimage, entry_id, data.device, service, hass)
+                image = await hass.async_add_executor_job(render_image, entry_id, data.device, service, hass)
                 image_bytes = BytesIO()
                 image.save(image_bytes, "PNG")
                 preview_coordinator.async_set_updated_data(image_bytes.getvalue())
