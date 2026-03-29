@@ -256,8 +256,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> bool:
     """Unload a config entry."""
-    hass.services.async_remove(DOMAIN, "write")
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+        hass.services.async_remove(DOMAIN, "write")
+
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    
+    if unload_ok and DOMAIN in hass.data:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        
+    return unload_ok
 
 async def get_entry_id_from_device(hass, device_id: str) -> str:
     device_reg = dr.async_get(hass)
