@@ -346,6 +346,7 @@ SENSOR_DESCRIPTIONS = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     # Volume (L)
     (
@@ -495,6 +496,7 @@ class GiciskyDurationSensorEntity(
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
@@ -551,6 +553,7 @@ class GiciskyFailureCountSensorEntity(
 
     _attr_state_class = SensorStateClass.TOTAL
     _attr_icon = "mdi:alert-circle"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
@@ -595,6 +598,7 @@ class GiciskyLastFailureTimeSensorEntity(
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:clock-alert"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,

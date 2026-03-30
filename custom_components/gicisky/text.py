@@ -3,7 +3,7 @@ from homeassistant.components.text import TextEntity, RestoreText
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import EntityCategory, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.restore_state import RestoreEntity
 from propcache.api import cached_property
@@ -30,6 +30,7 @@ class GiciskyTextEntity(RestoreText):
         self._attr_native_max = 32  # Reasonable max length for text fields
         self._attr_native_min = 0
         self._attr_mode = "text"
+        self._attr_entity_category = EntityCategory.CONFIG
         self._attr_native_value = f"{self._identifier}"
 
     @property
