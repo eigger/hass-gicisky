@@ -21,7 +21,9 @@ from homeassistant.components.bluetooth import (
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
-from homeassistant.helpers.device_registry import DeviceRegistry
+from datetime import datetime
+
+from homeassistant.helpers.device_registry import CONNECTION_BLUETOOTH, DeviceRegistry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util.signal_type import SignalType
 from homeassistant.util.dt import now
@@ -83,6 +85,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         hass.data[DOMAIN][LOCK] = Lock()
 
     device_registry = dr.async_get(hass)
+    _identifier = address.replace(":", "")[-8:]
+    device_entry = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        connections={(CONNECTION_BLUETOOTH, address)},
+        manufacturer="Gicisky",
+        name=f"Gicisky {_identifier}",
+    )
+    hass.data[DOMAIN][entry.entry_id]["device_id"] = device_entry.id
     bt_coordinator = GiciskyPassiveBluetoothProcessorCoordinator(
         hass,
         _LOGGER,
@@ -267,18 +277,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> 
     return unload_ok
 
 async def get_entry_id_from_device(hass, device_id: str) -> str:
-    device_reg = dr.async_get(hass)
-    device_entry = device_reg.async_get(device_id)
-    if not device_entry:
-        raise ValueError(f"Unknown device_id: {device_id}")
-    if not device_entry.config_entries:
-        raise ValueError(f"No config entries for device {device_id}")
+    """Resolve HA device_id to config entry_id by scanning hass.data[DOMAIN] only."""
+    domain_data = hass.data.get(DOMAIN, {})
+    for entry_id, rt in domain_data.items():
+        if entry_id == LOCK:
+            continue
+        if not isinstance(rt, dict) or "address" not in rt:
+            continue
+        if rt.get("device_id") == device_id:
+            _LOGGER.debug("device %s -> entry %s", device_id, entry_id)
+            return entry_id
 
-    _LOGGER.debug(f"{device_id} to {device_entry.config_entries}")
-    try:
-        entry_id = next(iter(device_entry.config_entries))
-    except StopIteration:
-        _LOGGER.error("%s None", device_id)
-        return None
-
-    return entry_id
+    raise ValueError(
+        f"No loaded Gicisky entry has device_id {device_id!r} in hass.data['{DOMAIN}']. "
+        "Reload the integration after updating, or target the correct device."
+    )
