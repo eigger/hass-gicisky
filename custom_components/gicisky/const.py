@@ -15,4 +15,7 @@ DEFAULT_RETRY_COUNT = 3
 DEFAULT_WRITE_DELAY_MS = 0
 DEFAULT_PREVENT_DUPLICATE_SEND = False
 
+# Runtime state keys
+WRITE_LOCK = "write_lock"
+
 

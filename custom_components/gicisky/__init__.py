@@ -38,6 +38,7 @@ from .const import (
     DEFAULT_RETRY_COUNT,
     DEFAULT_WRITE_DELAY_MS,
     DEFAULT_PREVENT_DUPLICATE_SEND,
+    WRITE_LOCK,
 )
 from .coordinator import GiciskyPassiveBluetoothProcessorCoordinator
 from .types import GiciskyConfigEntry
@@ -47,7 +48,8 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.CAMERA,
     Platform.IMAGE,
-    Platform.TEXT
+    Platform.TEXT,
+    Platform.SWITCH,
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -211,6 +213,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
                 # If dry_run is True, skip sending to the actual device
                 if dry_run:
+                    continue
+
+                # If write lock is on, update image coordinator but skip BLE
+                if hass.data[DOMAIN][entry_id].get(WRITE_LOCK, False):
+                    _LOGGER.info(f"Write lock active for {address} — skipping BLE write")
+                    image_coordinator.async_set_updated_data(current_image_data)
                     continue
 
                 # Start duration tracking
