@@ -33,9 +33,11 @@ from .const import (
     CONF_RETRY_COUNT,
     CONF_WRITE_DELAY_MS,
     CONF_PREVENT_DUPLICATE_SEND,
+    CONF_DEBOUNCE_MS,
     DEFAULT_RETRY_COUNT,
     DEFAULT_WRITE_DELAY_MS,
     DEFAULT_PREVENT_DUPLICATE_SEND,
+    DEFAULT_DEBOUNCE_MS,
 )
 
 
@@ -61,6 +63,15 @@ OPTIONS_SCHEMA = {
         CONF_PREVENT_DUPLICATE_SEND,
         default=DEFAULT_PREVENT_DUPLICATE_SEND,
     ): bool,
+    vol.Required(CONF_DEBOUNCE_MS, default=DEFAULT_DEBOUNCE_MS): NumberSelector(
+        NumberSelectorConfig(
+            min=0,
+            max=120000,
+            step=1000,
+            mode=NumberSelectorMode.SLIDER,
+            unit_of_measurement="ms",
+        )
+    ),
 }
 
 

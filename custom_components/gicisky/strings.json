@@ -26,7 +26,11 @@
         "data": {
           "retry_count": "Retry Count",
           "write_delay_ms": "Write Delay (ms)",
-          "prevent_duplicate_send": "Prevent Duplicate Send"
+          "prevent_duplicate_send": "Prevent Duplicate Send",
+          "debounce_ms": "Debounce Delay (ms)"
+        },
+        "data_description": {
+          "debounce_ms": "Delay before writing to device. New writes cancel pending ones. 0 = disabled (immediate write)."
         }
       }
     }

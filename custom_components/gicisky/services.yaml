@@ -72,3 +72,14 @@ write:
       example: 'false'
       selector:
         boolean:
+    debounce_override_ms:
+      name: Debounce Override
+      description: "Override configured debounce delay for this call (0 = immediate)"
+      required: false
+      example: 5000
+      selector:
+        number:
+          min: 0
+          max: 120000
+          step: 1000
+          unit_of_measurement: ms
