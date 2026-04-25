@@ -72,6 +72,80 @@ write:
       example: 'false'
       selector:
         boolean:
+write_smart:
+  name: Write Smart Label
+  description: Write Gicisky Label image with debounce and duplicate prevention
+  target:
+    device:
+      manufacturer: Gicisky
+  fields:
+    payload:
+      name: Payload
+      description: Paylod to draw
+      required: true
+      example: |
+        - type: text
+          value: Hello World!
+          x: 10
+          y: 10
+          size: 40
+      default:
+        - type: text
+          value: Hello World!
+          x: 10
+          y: 10
+          size: 40
+      selector:
+        object:
+    rotate:
+      name: Rotate
+      description: "Label Rotation (0, 90, 180, 270), default: 0"
+      required: false
+      example: '0'
+      selector:
+        number:
+          min: 0
+          max: 270
+          step: 90
+    background:
+      name: Background
+      description: "Background Color (white, black, red), default: white"
+      required: false
+      example: white
+      selector:
+        select:
+          options:
+            - "white"
+            - "black"
+            - "red"
+            - "yellow"
+    threshold:
+      name: Black Threshold
+      description: "Black binary threshold (0 ~ 255), default: 128"
+      required: false
+      example: 128
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+    red_threshold:
+      name: Red Threshold
+      description: "Red binary threshold (0 ~ 255), default: 128"
+      required: false
+      example: 128
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+    dry_run:
+      name: Dry Run
+      description: "Generate image without sending to device"
+      required: false
+      example: 'false'
+      selector:
+        boolean:
     debounce_override_ms:
       name: Debounce Override
       description: "Override configured debounce delay for this call (0 = immediate)"
