@@ -171,144 +171,201 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 hass.data[DOMAIN][entry_id]['duration_coordinator'].async_set_updated_data(elapsed)
             await asyncio.sleep(1)
 
+    def normalize_device_ids(service: ServiceCall) -> list[str]:
+        """Normalize service device_id payload into a list."""
+        device_ids = service.data.get("device_id")
+        if isinstance(device_ids, str):
+            return [device_ids]
+        if device_ids is None:
+            return []
+        return device_ids
+
+    async def build_write_context(
+        service: ServiceCall, entry_id: str, require_ble_device: bool
+    ) -> dict[str, Any] | None:
+        """Build shared write context for write services."""
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        options = {**config_entry.data, **config_entry.options}
+        max_retries = int(options.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT))
+        write_delay_ms = int(options.get(CONF_WRITE_DELAY_MS, DEFAULT_WRITE_DELAY_MS))
+        address = hass.data[DOMAIN][entry_id]['address']
+        data = hass.data[DOMAIN][entry_id]['data']
+        image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
+        preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
+        connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
+        duration_coordinator = hass.data[DOMAIN][entry_id]['duration_coordinator']
+        failure_coordinator = hass.data[DOMAIN][entry_id]['failure_coordinator']
+        last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
+        ble_device = async_ble_device_from_address(hass, address)
+
+        if data.device is None or data.device.width is None or data.device.height is None:
+            _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
+            return None
+        if require_ble_device and ble_device is None:
+            _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
+            return None
+
+        threshold = int(service.data.get("threshold", 128))
+        red_threshold = int(service.data.get("red_threshold", 128))
+        image = await hass.async_add_executor_job(render_image, entry_id, data.device, service, hass)
+        image_bytes = BytesIO()
+        image.save(image_bytes, "PNG")
+        current_image_data = image_bytes.getvalue()
+        preview_coordinator.async_set_updated_data(current_image_data)
+
+        return {
+            "entry_id": entry_id,
+            "options": options,
+            "address": address,
+            "data": data,
+            "image_coordinator": image_coordinator,
+            "connectivity_coordinator": connectivity_coordinator,
+            "duration_coordinator": duration_coordinator,
+            "failure_coordinator": failure_coordinator,
+            "last_failure_coordinator": last_failure_coordinator,
+            "ble_device": ble_device,
+            "threshold": threshold,
+            "red_threshold": red_threshold,
+            "image": image,
+            "current_image_data": current_image_data,
+            "max_retries": max_retries,
+            "write_delay_ms": write_delay_ms,
+        }
+
+    async def execute_write_core(context: dict[str, Any]) -> None:
+        """Execute BLE write with retry and duration tracking."""
+        entry_id = context["entry_id"]
+        address = context["address"]
+        data = context["data"]
+        image_coordinator = context["image_coordinator"]
+        connectivity_coordinator = context["connectivity_coordinator"]
+        duration_coordinator = context["duration_coordinator"]
+        failure_coordinator = context["failure_coordinator"]
+        last_failure_coordinator = context["last_failure_coordinator"]
+        ble_device = context["ble_device"]
+        threshold = context["threshold"]
+        red_threshold = context["red_threshold"]
+        image = context["image"]
+        current_image_data = context["current_image_data"]
+        max_retries = context["max_retries"]
+        write_delay_ms = context["write_delay_ms"]
+
+        # Start duration tracking
+        hass.data[DOMAIN][entry_id]['start_time'] = time.monotonic()
+        duration_coordinator.async_set_updated_data(0.0)
+        connectivity_coordinator.async_set_updated_data(True)
+        duration_task = asyncio.create_task(update_duration_loop(entry_id))
+        hass.data[DOMAIN][entry_id]['duration_task'] = duration_task
+
+        try:
+            for attempt in range(1, max_retries + 1):
+                success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt, write_delay_ms=write_delay_ms)
+                if success:
+                    image_coordinator.async_set_updated_data(current_image_data)
+                    return
+
+                _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    await sleep(1)
+                    continue
+
+                current_count = failure_coordinator.data if failure_coordinator.data else 0
+                failure_coordinator.async_set_updated_data(current_count + 1)
+                last_failure_coordinator.async_set_updated_data(now())
+                raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
+        finally:
+            # Stop duration tracking
+            duration_task.cancel()
+            try:
+                await duration_task
+            except asyncio.CancelledError:
+                pass
+
+            # Update final elapsed time
+            start_time = hass.data[DOMAIN][entry_id].get('start_time')
+            if start_time is not None:
+                elapsed_time = round(time.monotonic() - start_time, 2)
+                duration_coordinator.async_set_updated_data(elapsed_time)
+
+            hass.data[DOMAIN][entry_id]['start_time'] = None
+            hass.data[DOMAIN][entry_id]['duration_task'] = None
+            connectivity_coordinator.async_set_updated_data(False)
+
+    def cancel_pending_write(entry_id: str) -> None:
+        """Cancel pending debounced write for immediate execution paths."""
+        if not hass.data[DOMAIN][entry_id].get('write_pending'):
+            return
+        debouncer = hass.data[DOMAIN][entry_id]['write_debouncer']
+        debouncer.async_cancel()
+        hass.data[DOMAIN][entry_id]['write_pending'] = False
+
+    async def run_ble_write(
+        entry_id: str,
+        address: str,
+        image_coordinator: DataUpdateCoordinator[bytes],
+        current_image_data: bytes,
+        context: dict[str, Any],
+    ) -> None:
+        """Run BLE write under lock with final write-lock check."""
+        async with hass.data[DOMAIN][LOCK]:
+            hass.data[DOMAIN][entry_id]['write_pending'] = False
+            if hass.data[DOMAIN][entry_id].get(WRITE_LOCK, False):
+                _LOGGER.info(f"Write lock active for {address} — skipping BLE write")
+                image_coordinator.async_set_updated_data(current_image_data)
+                return
+            await execute_write_core(context)
+
     @callback
     # callback for the draw custom service
     async def writeservice(service: ServiceCall) -> None:
-        lock = hass.data[DOMAIN][LOCK]
-        async with lock:
-            device_ids = service.data.get("device_id")
-            if isinstance(device_ids, str):
-                device_ids = [device_ids]
-
-            dry_run = service.data.get("dry_run", False)
-
-            # Process each device
-            for device_id in device_ids:
-                entry_id = await get_entry_id_from_device(hass, device_id)
-                config_entry = hass.config_entries.async_get_entry(entry_id)
-                options = {**config_entry.data, **config_entry.options}
-                max_retries = int(options.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT))
-                write_delay_ms = int(options.get(CONF_WRITE_DELAY_MS, DEFAULT_WRITE_DELAY_MS))
-                address = hass.data[DOMAIN][entry_id]['address']
-                data = hass.data[DOMAIN][entry_id]['data']
-                image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
-                preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
-                connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
-                duration_coordinator = hass.data[DOMAIN][entry_id]['duration_coordinator']
-                failure_coordinator = hass.data[DOMAIN][entry_id]['failure_coordinator']
-                last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
-                ble_device = async_ble_device_from_address(hass, address)
-
-                if data.device is None or data.device.width is None or data.device.height is None:
-                    _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
-                    continue
-
-                threshold = int(service.data.get("threshold", 128))
-                red_threshold = int(service.data.get("red_threshold", 128))
-                image = await hass.async_add_executor_job(render_image, entry_id, data.device, service, hass)
-                image_bytes = BytesIO()
-                image.save(image_bytes, "PNG")
-                preview_coordinator.async_set_updated_data(image_bytes.getvalue())
-
-                # Check for duplicate image
-                prevent_duplicate_send = options.get(CONF_PREVENT_DUPLICATE_SEND, DEFAULT_PREVENT_DUPLICATE_SEND)
-                current_image_data = image_bytes.getvalue()
-                last_image_data = hass.data[DOMAIN][entry_id].get('last_image_data')
-
-                if prevent_duplicate_send and current_image_data == last_image_data:
-                    _LOGGER.info(f"Skipping duplicate image for {address}")
-                    continue
-
-                hass.data[DOMAIN][entry_id]['last_image_data'] = current_image_data
-
-                # If dry_run is True, skip sending to the actual device
-                if dry_run:
-                    continue
-
-                # Start duration tracking
-                hass.data[DOMAIN][entry_id]['start_time'] = time.monotonic()
-                duration_coordinator.async_set_updated_data(0.0)
-                connectivity_coordinator.async_set_updated_data(True)
-                
-                # Start background task to update duration
-                duration_task = asyncio.create_task(update_duration_loop(entry_id))
-                hass.data[DOMAIN][entry_id]['duration_task'] = duration_task
-                
-                try:
-                    for attempt in range(1, max_retries + 1):
-                        success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt, write_delay_ms=write_delay_ms)
-                        if success:
-                            image_coordinator.async_set_updated_data(image_bytes.getvalue())
-                            break
-
-                        _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
-                        if attempt < max_retries:
-                            await sleep(1)
-                        else:
-                            # Update failure sensors
-                            current_count = failure_coordinator.data if failure_coordinator.data else 0
-                            failure_coordinator.async_set_updated_data(current_count + 1)
-                            last_failure_coordinator.async_set_updated_data(now())
-                            raise HomeAssistantError(f"Failed to write to {address} after {max_retries} attempts")
-                finally:
-                    # Stop duration tracking
-                    duration_task.cancel()
-                    try:
-                        await duration_task
-                    except asyncio.CancelledError:
-                        pass
-                    
-                    # Update final elapsed time
-                    start_time = hass.data[DOMAIN][entry_id].get('start_time')
-                    if start_time is not None:
-                        elapsed_time = round(time.monotonic() - start_time, 2)
-                        duration_coordinator.async_set_updated_data(elapsed_time)
-                    
-                    hass.data[DOMAIN][entry_id]['start_time'] = None
-                    hass.data[DOMAIN][entry_id]['duration_task'] = None
-                    connectivity_coordinator.async_set_updated_data(False)
-
-    @callback
-    # callback for the smart write service
-    async def writesmartservice(service: ServiceCall) -> None:
-        device_ids = service.data.get("device_id")
-        if isinstance(device_ids, str):
-            device_ids = [device_ids]
-
+        device_ids = normalize_device_ids(service)
         dry_run = service.data.get("dry_run", False)
 
         # Process each device
         for device_id in device_ids:
             entry_id = await get_entry_id_from_device(hass, device_id)
-            config_entry = hass.config_entries.async_get_entry(entry_id)
-            options = {**config_entry.data, **config_entry.options}
-            max_retries = int(options.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT))
-            write_delay_ms = int(options.get(CONF_WRITE_DELAY_MS, DEFAULT_WRITE_DELAY_MS))
-            address = hass.data[DOMAIN][entry_id]['address']
-            data = hass.data[DOMAIN][entry_id]['data']
-            image_coordinator = hass.data[DOMAIN][entry_id]['image_coordinator']
-            preview_coordinator = hass.data[DOMAIN][entry_id]['preview_coordinator']
-            connectivity_coordinator = hass.data[DOMAIN][entry_id]['connectivity_coordinator']
-            duration_coordinator = hass.data[DOMAIN][entry_id]['duration_coordinator']
-            failure_coordinator = hass.data[DOMAIN][entry_id]['failure_coordinator']
-            last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
-            ble_device = async_ble_device_from_address(hass, address)
-
-            if data.device is None or data.device.width is None or data.device.height is None or ble_device is None:
-                _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
+            context = await build_write_context(service, entry_id, require_ble_device=False)
+            if context is None:
                 continue
 
-            threshold = int(service.data.get("threshold", 128))
-            red_threshold = int(service.data.get("red_threshold", 128))
-            image = await hass.async_add_executor_job(render_image, entry_id, data.device, service, hass)
-            image_bytes = BytesIO()
-            image.save(image_bytes, "PNG")
-            preview_coordinator.async_set_updated_data(image_bytes.getvalue())
+            address = context["address"]
+            image_coordinator = context["image_coordinator"]
+            current_image_data = context["current_image_data"]
+            hass.data[DOMAIN][entry_id]['last_image_data'] = current_image_data
+
+            # If dry_run is True, skip sending to the actual device
+            if dry_run:
+                continue
+
+            cancel_pending_write(entry_id)
+            await run_ble_write(
+                entry_id,
+                address,
+                image_coordinator,
+                current_image_data,
+                context,
+            )
+
+    @callback
+    # callback for the guarded write service
+    async def writeguardedservice(service: ServiceCall) -> None:
+        device_ids = normalize_device_ids(service)
+        dry_run = service.data.get("dry_run", False)
+
+        # Process each device
+        for device_id in device_ids:
+            entry_id = await get_entry_id_from_device(hass, device_id)
+            context = await build_write_context(service, entry_id, require_ble_device=True)
+            if context is None:
+                continue
 
             # Check for duplicate image
-            prevent_duplicate_send = options.get(CONF_PREVENT_DUPLICATE_SEND, DEFAULT_PREVENT_DUPLICATE_SEND)
-            current_image_data = image_bytes.getvalue()
+            options = context["options"]
+            address = context["address"]
+            image_coordinator = context["image_coordinator"]
+            current_image_data = context["current_image_data"]
             last_image_data = hass.data[DOMAIN][entry_id].get('last_image_data')
+            prevent_duplicate_send = options.get(CONF_PREVENT_DUPLICATE_SEND, DEFAULT_PREVENT_DUPLICATE_SEND)
 
             if prevent_duplicate_send and current_image_data == last_image_data:
                 _LOGGER.info(f"Skipping duplicate image for {address}")
@@ -329,54 +386,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             # Get debounce delay
             debounce_ms = int(service.data.get("debounce_override_ms", options.get(CONF_DEBOUNCE_MS, DEFAULT_DEBOUNCE_MS)))
 
-            # Inline BLE write function
-            async def do_ble_write(_entry_id=entry_id, _address=address, _image_coordinator=image_coordinator, _current_image_data=current_image_data, _duration_coordinator=duration_coordinator, _connectivity_coordinator=connectivity_coordinator, _ble_device=ble_device, _data=data, _image=image, _threshold=threshold, _red_threshold=red_threshold, _max_retries=max_retries, _write_delay_ms=write_delay_ms, _failure_coordinator=failure_coordinator, _last_failure_coordinator=last_failure_coordinator):
-                async with hass.data[DOMAIN][LOCK]:
-                    hass.data[DOMAIN][_entry_id]['write_pending'] = False
-                    if hass.data[DOMAIN][_entry_id].get(WRITE_LOCK, False):
-                        _LOGGER.info(f"Write lock active for {_address} — skipping BLE write")
-                        _image_coordinator.async_set_updated_data(_current_image_data)
-                        return
-
-                    # Start duration tracking
-                    hass.data[DOMAIN][_entry_id]['start_time'] = time.monotonic()
-                    _duration_coordinator.async_set_updated_data(0.0)
-                    _connectivity_coordinator.async_set_updated_data(True)
-                    # Start background task to update duration
-                    duration_task = asyncio.create_task(update_duration_loop(_entry_id))
-                    hass.data[DOMAIN][_entry_id]['duration_task'] = duration_task
-
-                    try:
-                        for attempt in range(1, _max_retries + 1):
-                            success = await update_image(_ble_device, _data.device, _image, _threshold, _red_threshold, attempt=attempt, write_delay_ms=_write_delay_ms)
-                            if success:
-                                _image_coordinator.async_set_updated_data(_current_image_data)
-                                break
-                            _LOGGER.warning(f"Write failed to {_address} (attempt {attempt}/{_max_retries})")
-                            if attempt < _max_retries:
-                                await sleep(1)
-                            else:
-                                # Update failure sensors
-                                current_count = _failure_coordinator.data if _failure_coordinator.data else 0
-                                _failure_coordinator.async_set_updated_data(current_count + 1)
-                                _last_failure_coordinator.async_set_updated_data(now())
-                                raise HomeAssistantError(f"Failed to write to {_address} after {_max_retries} attempts")
-                    finally:
-                        # Stop duration tracking
-                        duration_task.cancel()
-                        try:
-                            await duration_task
-                        except asyncio.CancelledError:
-                            pass
-                        # Update final elapsed time
-                        start_time = hass.data[DOMAIN][_entry_id].get('start_time')
-                        if start_time is not None:
-                            elapsed_time = round(time.monotonic() - start_time, 2)
-                            _duration_coordinator.async_set_updated_data(elapsed_time)
-                        hass.data[DOMAIN][_entry_id]['start_time'] = None
-                        hass.data[DOMAIN][_entry_id]['duration_task'] = None
-                        _connectivity_coordinator.async_set_updated_data(False)
-
             # Execute with or without debouncing
             debouncer = hass.data[DOMAIN][entry_id]['write_debouncer']
             if debounce_ms > 0:
@@ -387,15 +396,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 hass.data[DOMAIN][entry_id]['write_pending'] = True
                 if had_pending:
                     _LOGGER.info(f"Cancelled pending write for {address}, rescheduled with {debounce_ms}ms delay")
-                debouncer.function = do_ble_write
+                debouncer.function = partial(
+                    run_ble_write,
+                    entry_id,
+                    address,
+                    image_coordinator,
+                    current_image_data,
+                    context,
+                )
                 debouncer.async_schedule_call()
             else:
-                await do_ble_write()
+                cancel_pending_write(entry_id)
+                await run_ble_write(
+                    entry_id,
+                    address,
+                    image_coordinator,
+                    current_image_data,
+                    context,
+                )
 
 
     # register the services
     hass.services.async_register(DOMAIN, "write", writeservice)
-    hass.services.async_register(DOMAIN, "write_smart", writesmartservice)
+    hass.services.async_register(DOMAIN, "write_guarded", writeguardedservice)
 
     # only start after all platforms have had a chance to subscribe
     entry.async_on_unload(bt_coordinator.async_start())
@@ -404,20 +427,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> bool:
     """Unload a config entry."""
-    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
-        hass.services.async_remove(DOMAIN, "write")
-        hass.services.async_remove(DOMAIN, "write_smart")
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if not unload_ok:
+        return False
 
     # Cleanup write debouncer
     if entry.entry_id in hass.data.get(DOMAIN, {}):
         if write_debouncer := hass.data[DOMAIN][entry.entry_id].get('write_debouncer'):
             write_debouncer.async_shutdown()
 
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    
-    if unload_ok and DOMAIN in hass.data:
+    if DOMAIN in hass.data:
         hass.data[DOMAIN].pop(entry.entry_id, None)
-        
+
+    if len(hass.config_entries.async_entries(DOMAIN)) == 1:
+        hass.services.async_remove(DOMAIN, "write")
+        hass.services.async_remove(DOMAIN, "write_guarded")
+
     return unload_ok
 
 async def get_entry_id_from_device(hass, device_id: str) -> str:

@@ -191,6 +191,68 @@ target:
 
 ---
 
+## Service: `gicisky.write_guarded`
+
+`gicisky.write_guarded` uses the same rendering pipeline as `gicisky.write`, but applies guard checks before BLE transmission:
+
+- duplicate image prevention (when option `prevent_duplicate_send` is enabled)
+- write lock check
+- debounce scheduling (config `debounce_ms`, optionally overridden per call)
+
+Use this service when your automation can fire frequently and you want skip/coalescing behavior.
+
+### Service Parameters
+
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `payload` | ✅ | — | List of drawing elements (see [Payload Element Types](#payload-element-types)) |
+| `rotate` | ❌ | `0` | Image rotation: `0`, `90`, `180`, `270` |
+| `background` | ❌ | `white` | Background color: `white`, `black`, `red` |
+| `threshold` | ❌ | `128` | Black binary threshold (`0`–`255`) |
+| `red_threshold` | ❌ | `128` | Red binary threshold (`0`–`255`) |
+| `dry_run` | ❌ | `false` | Generate preview image without sending to device |
+| `debounce_override_ms` | ❌ | option `debounce_ms` | Override debounce delay for this call (`0` = immediate write) |
+
+### Basic Usage
+
+```yaml
+action: gicisky.write_guarded
+data:
+  payload:
+    - type: text
+      value: Guarded Write
+      x: 10
+      y: 10
+      size: 36
+target:
+  device_id: <your device>
+```
+
+### Immediate Guarded Write (Skip Debounce Once)
+
+```yaml
+action: gicisky.write_guarded
+data:
+  debounce_override_ms: 0
+  payload:
+    - type: text
+      value: Immediate
+      x: 10
+      y: 10
+      size: 36
+target:
+  device_id: <your device>
+```
+
+### Service Selection Guide
+
+| Service | Behavior |
+|---------|----------|
+| `gicisky.write` | Always executes write flow (except explicit `dry_run`) |
+| `gicisky.write_guarded` | Applies guard checks (duplicate/lock/debounce), and may skip or coalesce writes |
+
+---
+
 ### Payload Element Examples
 
 > [!TIP]

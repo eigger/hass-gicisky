@@ -72,9 +72,9 @@ write:
       example: 'false'
       selector:
         boolean:
-write_smart:
-  name: Write Smart Label
-  description: Write Gicisky Label image with debounce and duplicate prevention
+write_guarded:
+  name: Write Guarded Label
+  description: Write Gicisky Label image with prevent checks (duplicate, lock, debounce)
   target:
     device:
       manufacturer: Gicisky
