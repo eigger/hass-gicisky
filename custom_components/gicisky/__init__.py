@@ -198,11 +198,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         last_failure_coordinator = hass.data[DOMAIN][entry_id]['last_failure_coordinator']
         ble_device = async_ble_device_from_address(hass, address)
 
-        if data.device is None or data.device.width is None or data.device.height is None:
-            _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
-            return None
         if require_ble_device and ble_device is None:
-            _LOGGER.error(f"Cannot write to {address}: Device not found or no BLE data received yet. Please check if the device is powered on and in range.")
+            _LOGGER.error(f"Cannot write to {address}: BLE device handle is unavailable. Please check power/range and Bluetooth adapter state.")
+            return None
+        if data.device is None or data.device.width is None or data.device.height is None:
+            _LOGGER.error(f"Cannot write to {address}: Device metadata is not ready yet. Please check power/range and wait for BLE data.")
             return None
 
         threshold = int(service.data.get("threshold", 128))
