@@ -460,14 +460,10 @@ async def async_setup_entry(
     duration_coordinator = hass.data[DOMAIN][entry.entry_id]["duration_coordinator"]
     failure_coordinator = hass.data[DOMAIN][entry.entry_id]["failure_coordinator"]
     last_failure_coordinator = hass.data[DOMAIN][entry.entry_id]["last_failure_coordinator"]
-    last_write_coordinator = hass.data[DOMAIN][entry.entry_id]["last_write_coordinator"]
-    last_preview_coordinator = hass.data[DOMAIN][entry.entry_id]["last_preview_coordinator"]
     async_add_entities([
         GiciskyDurationSensorEntity(hass, entry, duration_coordinator),
         GiciskyFailureCountSensorEntity(hass, entry, failure_coordinator),
         GiciskyLastFailureTimeSensorEntity(hass, entry, last_failure_coordinator),
-        GiciskyLastWriteTimeSensorEntity(hass, entry, last_write_coordinator),
-        GiciskyLastPreviewTimeSensorEntity(hass, entry, last_preview_coordinator),
     ])
 
 
@@ -618,94 +614,6 @@ class GiciskyLastFailureTimeSensorEntity(
         self._attr_name = f"Gicisky {self._identifier} Last Failure Time"
         self._attr_unique_id = f"gicisky_{self._identifier}_last_failure_time"
         self._native_value: datetime | None = None
-
-    @property
-    def native_value(self) -> datetime | None:
-        """Return the native value."""
-        return self.coordinator.data
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
-        )
-
-    @cached_property
-    def available(self) -> bool:
-        """Entity always available."""
-        return True
-
-
-class GiciskyLastWriteTimeSensorEntity(
-    CoordinatorEntity[DataUpdateCoordinator[datetime | None]],
-    SensorEntity,
-):
-    """Representation of a Gicisky BLE last write time sensor."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:clock-check"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: ConfigEntry,
-        coordinator: DataUpdateCoordinator[datetime | None],
-    ) -> None:
-        """Initialize the last write time sensor."""
-        CoordinatorEntity.__init__(self, coordinator)
-        address = hass.data[DOMAIN][entry.entry_id]["address"]
-        self._address = address
-        self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Last Write"
-        self._attr_unique_id = f"gicisky_{self._identifier}_last_write_time"
-
-    @property
-    def native_value(self) -> datetime | None:
-        """Return the native value."""
-        return self.coordinator.data
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info."""
-        return DeviceInfo(
-            connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
-        )
-
-    @cached_property
-    def available(self) -> bool:
-        """Entity always available."""
-        return True
-
-
-class GiciskyLastPreviewTimeSensorEntity(
-    CoordinatorEntity[DataUpdateCoordinator[datetime | None]],
-    SensorEntity,
-):
-    """Representation of a Gicisky BLE last preview time sensor."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:clock-edit-outline"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: ConfigEntry,
-        coordinator: DataUpdateCoordinator[datetime | None],
-    ) -> None:
-        """Initialize the last preview time sensor."""
-        CoordinatorEntity.__init__(self, coordinator)
-        address = hass.data[DOMAIN][entry.entry_id]["address"]
-        self._address = address
-        self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Last Preview"
-        self._attr_unique_id = f"gicisky_{self._identifier}_last_preview_time"
 
     @property
     def native_value(self) -> datetime | None:

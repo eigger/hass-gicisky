@@ -139,16 +139,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         _LOGGER,
         name=DOMAIN,
     )
-    last_write_coordinator: DataUpdateCoordinator[datetime | None] = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-    )
-    last_preview_coordinator: DataUpdateCoordinator[datetime | None] = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-    )
     entry.runtime_data = bt_coordinator
     hass.data[DOMAIN][entry.entry_id]['image_coordinator'] = image_coordinator
     hass.data[DOMAIN][entry.entry_id]['preview_coordinator'] = preview_coordinator
@@ -156,8 +146,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
     hass.data[DOMAIN][entry.entry_id]['duration_coordinator'] = duration_coordinator
     hass.data[DOMAIN][entry.entry_id]['failure_coordinator'] = failure_coordinator
     hass.data[DOMAIN][entry.entry_id]['last_failure_coordinator'] = last_failure_coordinator
-    hass.data[DOMAIN][entry.entry_id]['last_write_coordinator'] = last_write_coordinator
-    hass.data[DOMAIN][entry.entry_id]['last_preview_coordinator'] = last_preview_coordinator
     hass.data[DOMAIN][entry.entry_id]['duration_task'] = None
     hass.data[DOMAIN][entry.entry_id]['start_time'] = None
     hass.data[DOMAIN][entry.entry_id]['last_image_data'] = None
@@ -172,8 +160,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
     duration_coordinator.async_set_updated_data(0.0)
     failure_coordinator.async_set_updated_data(0)
     last_failure_coordinator.async_set_updated_data(None)
-    last_write_coordinator.async_set_updated_data(None)
-    last_preview_coordinator.async_set_updated_data(None)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async def update_duration_loop(entry_id: str):
@@ -226,7 +212,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         image.save(image_bytes, "PNG")
         current_image_data = image_bytes.getvalue()
         preview_coordinator.async_set_updated_data(current_image_data)
-        hass.data[DOMAIN][entry_id]['last_preview_coordinator'].async_set_updated_data(now())
 
         return {
             "entry_id": entry_id,
@@ -238,7 +223,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             "duration_coordinator": duration_coordinator,
             "failure_coordinator": failure_coordinator,
             "last_failure_coordinator": last_failure_coordinator,
-            "last_write_coordinator": hass.data[DOMAIN][entry_id]['last_write_coordinator'],
             "ble_device": ble_device,
             "threshold": threshold,
             "red_threshold": red_threshold,
@@ -258,7 +242,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         duration_coordinator = context["duration_coordinator"]
         failure_coordinator = context["failure_coordinator"]
         last_failure_coordinator = context["last_failure_coordinator"]
-        last_write_coordinator = context["last_write_coordinator"]
         ble_device = context["ble_device"]
         threshold = context["threshold"]
         red_threshold = context["red_threshold"]
@@ -279,7 +262,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt, write_delay_ms=write_delay_ms)
                 if success:
                     image_coordinator.async_set_updated_data(current_image_data)
-                    last_write_coordinator.async_set_updated_data(now())
                     return
 
                 _LOGGER.warning(f"Write failed to {address} (attempt {attempt}/{max_retries})")
