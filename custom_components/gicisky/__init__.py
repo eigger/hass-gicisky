@@ -311,7 +311,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             hass.data[DOMAIN][entry_id]['write_pending'] = False
             if hass.data[DOMAIN][entry_id].get(WRITE_LOCK, False):
                 _LOGGER.info(f"Write lock active for {address} — skipping BLE write")
-                image_coordinator.async_set_updated_data(current_image_data)
                 return
             await execute_write_core(context)
 
@@ -380,7 +379,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             # If write lock is on, update image coordinator but skip BLE
             if hass.data[DOMAIN][entry_id].get(WRITE_LOCK, False):
                 _LOGGER.info(f"Write lock active for {address} — skipping BLE write")
-                image_coordinator.async_set_updated_data(current_image_data)
                 continue
 
             # Get debounce delay
