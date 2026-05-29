@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import dataclasses
 from typing import Any
 
@@ -15,7 +14,6 @@ from homeassistant.components.bluetooth import (
     async_discovered_service_info,
 )
 from homeassistant.config_entries import (
-    SOURCE_REAUTH,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlowWithReload,
@@ -172,38 +170,15 @@ class GiciskyConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(titles)}),
         )
 
-    async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
-    ) -> ConfigFlowResult:
-        """Handle a flow initialized by a reauth event."""
-        device: DeviceData = entry_data["device"]
-        self._discovered_device = device
-
-        self._discovery_info = device.last_service_info
-
-        # Otherwise there wasn't actually encryption so abort
-        return self.async_abort(reason="reauth_successful")
-
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         return OptionsFlowHandler()
 
-    def _async_get_or_create_entry(
-        self, bindkey: str | None = None
-    ) -> ConfigFlowResult:
-        data: dict[str, Any] = {}
-        if bindkey:
-            data["bindkey"] = bindkey
-
-        if self.source == SOURCE_REAUTH:
-            return self.async_update_reload_and_abort(
-                self._get_reauth_entry(), data=data
-            )
-
+    def _async_get_or_create_entry(self) -> ConfigFlowResult:
         return self.async_create_entry(
             title=self.context["title_placeholders"]["name"],
-            data=data,
+            data={},
         )
 
 

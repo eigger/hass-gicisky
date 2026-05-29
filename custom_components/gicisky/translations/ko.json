@@ -1,0 +1,40 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "설정할 기기를 선택하세요.",
+        "data": {
+          "address": "기기"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "이 기기를 설정하시겠습니까?"
+      }
+    },
+    "abort": {
+      "not_supported": "지원하지 않는 기기입니다.",
+      "no_devices_found": "네트워크에서 설정 가능한 기기를 찾을 수 없습니다.",
+      "already_in_progress": "이미 설정이 진행 중입니다.",
+      "already_configured": "이미 설정된 기기입니다."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "retry_count": "재시도 횟수",
+          "write_delay_ms": "쓰기 지연 (ms)",
+          "prevent_duplicate_send": "중복 전송 방지",
+          "debounce_ms": "디바운스 지연 (ms)"
+        },
+        "data_description": {
+          "retry_count": "기기에 쓰기를 포기하기 전까지 재시도할 횟수입니다.",
+          "write_delay_ms": "기기에 각 데이터 조각을 쓸 때마다의 지연 시간입니다. 쓰기가 불안정하면 늘리세요.",
+          "prevent_duplicate_send": "새 이미지가 마지막으로 전송한 이미지와 동일하면 쓰기를 건너뜁니다.",
+          "debounce_ms": "기기에 쓰기 전 대기 시간입니다. 새 쓰기 요청이 대기 중인 요청을 취소합니다. 0 = 비활성화(즉시 쓰기)."
+        }
+      }
+    }
+  }
+}
