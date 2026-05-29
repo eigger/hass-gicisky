@@ -4,6 +4,10 @@
       "name": "Write Label",
       "description": "Write a label image to a Gicisky device.",
       "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Gicisky device(s) to write to."
+        },
         "payload": {
           "name": "Payload",
           "description": "Payload describing what to draw."
@@ -34,6 +38,10 @@
       "name": "Write Guarded Label",
       "description": "Write a label image with guards applied (duplicate, write lock, debounce).",
       "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Gicisky device(s) to write to."
+        },
         "payload": {
           "name": "Payload",
           "description": "Payload describing what to draw."

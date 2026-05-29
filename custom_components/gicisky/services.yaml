@@ -1,8 +1,11 @@
 write:
-  target:
-    entity:
-      integration: gicisky
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: gicisky
+          multiple: true
     payload:
       required: true
       example: |
@@ -59,10 +62,13 @@ write:
       selector:
         boolean:
 write_guarded:
-  target:
-    entity:
-      integration: gicisky
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: gicisky
+          multiple: true
     payload:
       required: true
       example: |
