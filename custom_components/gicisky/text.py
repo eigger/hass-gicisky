@@ -21,11 +21,13 @@ async def async_setup_entry(
     async_add_entities([GiciskyTextEntity(hass, entry)])
 
 class GiciskyTextEntity(RestoreText):
+    _attr_has_entity_name = True
+    _attr_translation_key = "alias"
+
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry):
         address = hass.data[DOMAIN][entry.entry_id]['address']
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Alias"
         self._attr_unique_id = f"gicisky_{self._identifier}_alias"
         self._attr_native_max = 32  # Reasonable max length for text fields
         self._attr_native_min = 0

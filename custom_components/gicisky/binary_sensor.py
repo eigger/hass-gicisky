@@ -37,9 +37,11 @@ async def async_setup_entry(
     ])
 
 class GiciskyBluetoothConnectivitySensorEntity(
-    CoordinatorEntity[DataUpdateCoordinator[bool]], 
+    CoordinatorEntity[DataUpdateCoordinator[bool]],
     BinarySensorEntity,
 ):
+    _attr_has_entity_name = True
+    _attr_translation_key = "connectivity"
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: DataUpdateCoordinator[bool]):
@@ -48,7 +50,6 @@ class GiciskyBluetoothConnectivitySensorEntity(
         address = hass.data[DOMAIN][entry.entry_id]['address']
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Connectivity"
         self._attr_unique_id = f"gicisky_{self._identifier}_connectivity"
         self._is_on = False
 
@@ -94,6 +95,8 @@ class GiciskyDisplayInSyncBinarySensor(
     CoordinatorEntity[DataUpdateCoordinator[bytes | None]],
     BinarySensorEntity,
 ):
+    _attr_has_entity_name = True
+    _attr_translation_key = "display_in_sync"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
@@ -108,7 +111,6 @@ class GiciskyDisplayInSyncBinarySensor(
         address = hass.data[DOMAIN][entry.entry_id]["address"]
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Display In Sync"
         self._attr_unique_id = f"gicisky_{self._identifier}_display_in_sync"
 
     @property

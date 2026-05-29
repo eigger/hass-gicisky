@@ -1,4 +1,25 @@
 {
+  "entity": {
+    "sensor": {
+      "write_duration": { "name": "Write Duration" },
+      "failure_count": { "name": "Failure Count" },
+      "last_failure_time": { "name": "Last Failure Time" }
+    },
+    "binary_sensor": {
+      "connectivity": { "name": "Connectivity" },
+      "display_in_sync": { "name": "Display In Sync" }
+    },
+    "image": {
+      "last_updated_content": { "name": "Last Updated Content" },
+      "preview_content": { "name": "Preview Content" }
+    },
+    "text": {
+      "alias": { "name": "Alias" }
+    },
+    "switch": {
+      "write_lock": { "name": "Write Lock" }
+    }
+  },
   "config": {
     "flow_title": "{name}",
     "step": {

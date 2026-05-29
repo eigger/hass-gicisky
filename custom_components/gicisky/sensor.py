@@ -154,6 +154,8 @@ class GiciskyDurationSensorEntity(
 ):
     """Representation of a Gicisky BLE write duration sensor."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "write_duration"
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -170,7 +172,6 @@ class GiciskyDurationSensorEntity(
         address = hass.data[DOMAIN][entry.entry_id]["address"]
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Write Duration"
         self._attr_unique_id = f"gicisky_{self._identifier}_write_duration"
         self._native_value: float = 0.0
 
@@ -212,6 +213,8 @@ class GiciskyFailureCountSensorEntity(
 ):
     """Representation of a Gicisky BLE write failure count sensor."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "failure_count"
     _attr_state_class = SensorStateClass.TOTAL
     _attr_icon = "mdi:alert-circle"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -227,7 +230,6 @@ class GiciskyFailureCountSensorEntity(
         address = hass.data[DOMAIN][entry.entry_id]["address"]
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Failure Count"
         self._attr_unique_id = f"gicisky_{self._identifier}_failure_count"
         self._native_value: int = 0
 
@@ -257,6 +259,8 @@ class GiciskyLastFailureTimeSensorEntity(
 ):
     """Representation of a Gicisky BLE write last failure time sensor."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "last_failure_time"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:clock-alert"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -272,7 +276,6 @@ class GiciskyLastFailureTimeSensorEntity(
         address = hass.data[DOMAIN][entry.entry_id]["address"]
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Last Failure Time"
         self._attr_unique_id = f"gicisky_{self._identifier}_last_failure_time"
         self._native_value: datetime | None = None
 
