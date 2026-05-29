@@ -9,7 +9,7 @@
         }
       },
       "bluetooth_confirm": {
-        "description": "이 기기를 설정하시겠습니까?"
+        "description": "{name} 기기를 설정하시겠습니까?"
       }
     },
     "abort": {
@@ -22,6 +22,8 @@
   "options": {
     "step": {
       "init": {
+        "title": "Gicisky 옵션",
+        "description": "기기에 이미지를 쓰는 방식을 조정합니다.",
         "data": {
           "retry_count": "재시도 횟수",
           "write_delay_ms": "쓰기 지연 (ms)",

@@ -22,6 +22,8 @@
   "options": {
     "step": {
       "init": {
+        "title": "Gicisky Options",
+        "description": "Adjust how images are written to the device.",
         "data": {
           "retry_count": "Retry Count",
           "write_delay_ms": "Write Delay (ms)",
