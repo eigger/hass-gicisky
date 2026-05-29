@@ -1,6 +1,9 @@
 {
   "domain": "gicisky",
   "name": "Gicisky",
+  "after_dependencies": [
+    "recorder"
+  ],
   "bluetooth": [
     {
       "manufacturer_id": 20563,

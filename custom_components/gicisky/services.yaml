@@ -1,6 +1,6 @@
 write:
   target:
-    device:
+    entity:
       integration: gicisky
   fields:
     payload:
@@ -60,7 +60,7 @@ write:
         boolean:
 write_guarded:
   target:
-    device:
+    entity:
       integration: gicisky
   fields:
     payload:
