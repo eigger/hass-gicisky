@@ -29,6 +29,9 @@ async def async_setup_entry(
     ])
 
 class GiciskyImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageEntity):
+    _attr_has_entity_name = True
+    _attr_translation_key = "last_updated_content"
+
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: DataUpdateCoordinator[bytes]):
         CoordinatorEntity.__init__(self, coordinator)
         ImageEntity.__init__(self, hass)
@@ -36,7 +39,6 @@ class GiciskyImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageE
         address = hass.data[DOMAIN][entry.entry_id]['address']
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Last Updated Content"
         self._attr_unique_id = f"gicisky_{self._identifier}_last_updated_content"
         self._attr_content_type = "image/png"
         self._cached_image = Image(content_type="image/png", content=coordinator.data)
@@ -79,6 +81,8 @@ class GiciskyImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageE
 
 
 class GiciskyPreviewImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageEntity):
+    _attr_has_entity_name = True
+    _attr_translation_key = "preview_content"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: DataUpdateCoordinator[bytes]):
@@ -87,7 +91,6 @@ class GiciskyPreviewImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]],
         address = hass.data[DOMAIN][entry.entry_id]['address']
         self._address = address
         self._identifier = address.replace(":", "")[-8:]
-        self._attr_name = f"Gicisky {self._identifier} Preview Content"
         self._attr_unique_id = f"gicisky_{self._identifier}_preview_content_image"
         self._attr_content_type = "image/png"
         self._cached_image = Image(content_type="image/png", content=coordinator.data)

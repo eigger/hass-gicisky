@@ -2,6 +2,9 @@
   "services": {
     "write": {
       "service": "mdi:image-move"
+    },
+    "write_guarded": {
+      "service": "mdi:image-check"
     }
   }
 }

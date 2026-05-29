@@ -1,0 +1,129 @@
+{
+  "services": {
+    "write": {
+      "name": "라벨 쓰기",
+      "description": "Gicisky 기기에 라벨 이미지를 씁니다.",
+      "fields": {
+        "payload": {
+          "name": "페이로드",
+          "description": "그릴 내용을 정의하는 페이로드입니다."
+        },
+        "rotate": {
+          "name": "회전",
+          "description": "라벨 회전 각도(0, 90, 180, 270). 기본값: 0."
+        },
+        "background": {
+          "name": "배경",
+          "description": "배경색(white, black, red, yellow). 기본값: white."
+        },
+        "threshold": {
+          "name": "검정 임계값",
+          "description": "검정 이진화 임계값(0-255). 기본값: 128."
+        },
+        "red_threshold": {
+          "name": "빨강 임계값",
+          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        },
+        "dry_run": {
+          "name": "테스트 실행",
+          "description": "기기에 전송하지 않고 이미지만 생성합니다."
+        }
+      }
+    },
+    "write_guarded": {
+      "name": "보호된 라벨 쓰기",
+      "description": "보호 장치(중복 방지, 쓰기 잠금, 디바운스)를 적용하여 라벨 이미지를 씁니다.",
+      "fields": {
+        "payload": {
+          "name": "페이로드",
+          "description": "그릴 내용을 정의하는 페이로드입니다."
+        },
+        "rotate": {
+          "name": "회전",
+          "description": "라벨 회전 각도(0, 90, 180, 270). 기본값: 0."
+        },
+        "background": {
+          "name": "배경",
+          "description": "배경색(white, black, red, yellow). 기본값: white."
+        },
+        "threshold": {
+          "name": "검정 임계값",
+          "description": "검정 이진화 임계값(0-255). 기본값: 128."
+        },
+        "red_threshold": {
+          "name": "빨강 임계값",
+          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        },
+        "dry_run": {
+          "name": "테스트 실행",
+          "description": "기기에 전송하지 않고 이미지만 생성합니다."
+        },
+        "debounce_override_ms": {
+          "name": "디바운스 재정의",
+          "description": "이번 호출에 한해 설정된 디바운스 지연을 재정의합니다(0 = 즉시)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "write_duration": { "name": "쓰기 소요 시간" },
+      "failure_count": { "name": "실패 횟수" },
+      "last_failure_time": { "name": "마지막 실패 시각" }
+    },
+    "binary_sensor": {
+      "connectivity": { "name": "연결 상태" },
+      "display_in_sync": { "name": "디스플레이 동기화 상태" }
+    },
+    "image": {
+      "last_updated_content": { "name": "마지막 업데이트 콘텐츠" },
+      "preview_content": { "name": "미리보기 콘텐츠" }
+    },
+    "text": {
+      "alias": { "name": "별칭" }
+    },
+    "switch": {
+      "write_lock": { "name": "쓰기 잠금" }
+    }
+  },
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "설정할 기기를 선택하세요.",
+        "data": {
+          "address": "기기"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "{name} 기기를 설정하시겠습니까?"
+      }
+    },
+    "abort": {
+      "not_supported": "지원하지 않는 기기입니다.",
+      "no_devices_found": "네트워크에서 설정 가능한 기기를 찾을 수 없습니다.",
+      "already_in_progress": "이미 설정이 진행 중입니다.",
+      "already_configured": "이미 설정된 기기입니다."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gicisky 옵션",
+        "description": "기기에 이미지를 쓰는 방식을 조정합니다.",
+        "data": {
+          "retry_count": "재시도 횟수",
+          "write_delay_ms": "쓰기 지연 (ms)",
+          "prevent_duplicate_send": "중복 전송 방지",
+          "debounce_ms": "디바운스 지연 (ms)"
+        },
+        "data_description": {
+          "retry_count": "기기에 쓰기를 포기하기 전까지 재시도할 횟수입니다.",
+          "write_delay_ms": "기기에 각 데이터 조각을 쓸 때마다의 지연 시간입니다. 쓰기가 불안정하면 늘리세요.",
+          "prevent_duplicate_send": "새 이미지가 마지막으로 전송한 이미지와 동일하면 쓰기를 건너뜁니다.",
+          "debounce_ms": "기기에 쓰기 전 대기 시간입니다. 새 쓰기 요청이 대기 중인 요청을 취소합니다. 0 = 비활성화(즉시 쓰기)."
+        }
+      }
+    }
+  }
+}

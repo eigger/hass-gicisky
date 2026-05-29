@@ -1,13 +1,9 @@
 write:
-  name: Write Label
-  description: Write Gicisky Label image
   target:
     device:
-      manufacturer: Gicisky
+      integration: gicisky
   fields:
     payload:
-      name: Payload
-      description: Paylod to draw
       required: true
       example: |
         - type: text
@@ -24,8 +20,6 @@ write:
       selector:
         object:
     rotate:
-      name: Rotate
-      description: "Label Rotation (0, 90, 180, 270), default: 0"
       required: false
       example: '0'
       selector:
@@ -34,8 +28,6 @@ write:
           max: 270
           step: 90
     background:
-      name: Background
-      description: "Background Color (white, black, red), default: white"
       required: false
       example: white
       selector:
@@ -46,8 +38,6 @@ write:
             - "red"
             - "yellow"
     threshold:
-      name: Black Threshold
-      description: "Black binary threshold (0 ~ 255), default: 128"
       required: false
       example: 128
       selector:
@@ -56,8 +46,6 @@ write:
           max: 255
           step: 1
     red_threshold:
-      name: Red Threshold
-      description: "Red binary threshold (0 ~ 255), default: 128"
       required: false
       example: 128
       selector:
@@ -66,22 +54,16 @@ write:
           max: 255
           step: 1
     dry_run:
-      name: Dry Run
-      description: "Generate image without sending to device"
       required: false
       example: 'false'
       selector:
         boolean:
 write_guarded:
-  name: Write Guarded Label
-  description: Write Gicisky Label image with prevent checks (duplicate, lock, debounce)
   target:
     device:
-      manufacturer: Gicisky
+      integration: gicisky
   fields:
     payload:
-      name: Payload
-      description: Paylod to draw
       required: true
       example: |
         - type: text
@@ -98,8 +80,6 @@ write_guarded:
       selector:
         object:
     rotate:
-      name: Rotate
-      description: "Label Rotation (0, 90, 180, 270), default: 0"
       required: false
       example: '0'
       selector:
@@ -108,8 +88,6 @@ write_guarded:
           max: 270
           step: 90
     background:
-      name: Background
-      description: "Background Color (white, black, red), default: white"
       required: false
       example: white
       selector:
@@ -120,8 +98,6 @@ write_guarded:
             - "red"
             - "yellow"
     threshold:
-      name: Black Threshold
-      description: "Black binary threshold (0 ~ 255), default: 128"
       required: false
       example: 128
       selector:
@@ -130,8 +106,6 @@ write_guarded:
           max: 255
           step: 1
     red_threshold:
-      name: Red Threshold
-      description: "Red binary threshold (0 ~ 255), default: 128"
       required: false
       example: 128
       selector:
@@ -140,15 +114,11 @@ write_guarded:
           max: 255
           step: 1
     dry_run:
-      name: Dry Run
-      description: "Generate image without sending to device"
       required: false
       example: 'false'
       selector:
         boolean:
     debounce_override_ms:
-      name: Debounce Override
-      description: "Override configured debounce delay for this call (0 = immediate)"
       required: false
       example: 5000
       selector:
