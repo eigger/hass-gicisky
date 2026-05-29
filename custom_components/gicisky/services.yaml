@@ -1,7 +1,7 @@
 write:
   target:
     device:
-      manufacturer: Gicisky
+      integration: gicisky
   fields:
     payload:
       required: true
@@ -61,7 +61,7 @@ write:
 write_guarded:
   target:
     device:
-      manufacturer: Gicisky
+      integration: gicisky
   fields:
     payload:
       required: true
