@@ -49,7 +49,6 @@ from .types import GiciskyConfigEntry
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.SENSOR,
-    Platform.CAMERA,
     Platform.IMAGE,
     Platform.TEXT,
     Platform.SWITCH,

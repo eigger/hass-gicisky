@@ -2,6 +2,7 @@
 import logging
 from homeassistant.components.image import ImageEntity, Image
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
@@ -78,6 +79,8 @@ class GiciskyImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageE
 
 
 class GiciskyPreviewImageEntity(CoordinatorEntity[DataUpdateCoordinator[bytes]], ImageEntity):
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator: DataUpdateCoordinator[bytes]):
         CoordinatorEntity.__init__(self, coordinator)
         ImageEntity.__init__(self, hass)

@@ -17,6 +17,7 @@ from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothProcessorEntity,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
@@ -276,6 +277,8 @@ class GiciskyDisplayInSyncBinarySensor(
     CoordinatorEntity[DataUpdateCoordinator[bytes | None]],
     BinarySensorEntity,
 ):
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     def __init__(
         self,
         hass: HomeAssistant,
