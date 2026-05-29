@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
+from typing import Any
 import logging
 import time
 import asyncio
@@ -13,20 +14,18 @@ from .renderer import *
 from .gicisky_ble import GiciskyBluetoothDeviceData, SensorUpdate
 from .gicisky_ble.writer import update_image
 from homeassistant.components.bluetooth import (
-    DOMAIN as BLUETOOTH_DOMAIN,
     BluetoothScanningMode,
     BluetoothServiceInfoBleak,
     async_ble_device_from_address,
 )
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import device_registry as dr
 from datetime import datetime
 
 from homeassistant.helpers.device_registry import CONNECTION_BLUETOOTH, DeviceRegistry
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.debounce import Debouncer
-from homeassistant.util.signal_type import SignalType
 from homeassistant.util.dt import now
 from homeassistant.exceptions import HomeAssistantError
 
@@ -313,8 +312,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 return
             await execute_write_core(context)
 
-    @callback
-    # callback for the draw custom service
+    # handler for the write custom service
     async def writeservice(service: ServiceCall) -> None:
         device_ids = normalize_device_ids(service)
         dry_run = service.data.get("dry_run", False)
@@ -344,8 +342,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
                 context,
             )
 
-    @callback
-    # callback for the guarded write service
+    # handler for the guarded write service
     async def writeguardedservice(service: ServiceCall) -> None:
         device_ids = normalize_device_ids(service)
         dry_run = service.data.get("dry_run", False)

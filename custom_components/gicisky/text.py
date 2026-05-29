@@ -1,11 +1,10 @@
 import logging
-from homeassistant.components.text import TextEntity, RestoreText
+from homeassistant.components.text import RestoreText
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
-from homeassistant.const import EntityCategory, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import EntityCategory
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.restore_state import RestoreEntity
 from propcache.api import cached_property
 from .const import (
     DOMAIN
