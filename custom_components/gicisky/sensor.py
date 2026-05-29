@@ -5,9 +5,6 @@ from datetime import datetime
 from typing import cast
 import logging
 from .gicisky_ble import SensorDeviceClass as GiciskySensorDeviceClass, SensorUpdate, Units
-from .gicisky_ble.const import (
-    ExtendedSensorDeviceClass as GiciskyExtendedSensorDeviceClass,
-)
 from homeassistant.util.dt import parse_datetime
 from homeassistant.components.bluetooth.passive_update_processor import (
     PassiveBluetoothDataUpdate,
@@ -22,26 +19,10 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     ATTR_SW_VERSION,
     ATTR_HW_VERSION,
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_PARTS_PER_MILLION,
-    DEGREE,
-    LIGHT_LUX,
     PERCENTAGE,
-    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
-    UnitOfConductivity,
-    UnitOfElectricCurrent,
     UnitOfElectricPotential,
-    UnitOfEnergy,
-    UnitOfLength,
-    UnitOfMass,
-    UnitOfPower,
-    UnitOfPressure,
-    UnitOfSpeed,
-    UnitOfTemperature,
     UnitOfTime,
-    UnitOfVolume,
-    UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
@@ -59,15 +40,6 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 SENSOR_DESCRIPTIONS = {
-    # Acceleration (m/s²)
-    (
-        GiciskySensorDeviceClass.ACCELERATION,
-        Units.ACCELERATION_METERS_PER_SQUARE_SECOND,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.ACCELERATION}_{Units.ACCELERATION_METERS_PER_SQUARE_SECOND}",
-        native_unit_of_measurement=Units.ACCELERATION_METERS_PER_SQUARE_SECOND,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
     # Battery (percent)
     (GiciskySensorDeviceClass.BATTERY, Units.PERCENTAGE): SensorEntityDescription(
         key=f"{GiciskySensorDeviceClass.BATTERY}_{Units.PERCENTAGE}",
@@ -75,267 +47,6 @@ SENSOR_DESCRIPTIONS = {
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    # Channel (-)
-    (GiciskyExtendedSensorDeviceClass.CHANNEL, None): SensorEntityDescription(
-        key=str(GiciskyExtendedSensorDeviceClass.CHANNEL),
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Conductivity (µS/cm)
-    (
-        GiciskySensorDeviceClass.CONDUCTIVITY,
-        Units.CONDUCTIVITY,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.CONDUCTIVITY}_{Units.CONDUCTIVITY}",
-        device_class=SensorDeviceClass.CONDUCTIVITY,
-        native_unit_of_measurement=UnitOfConductivity.MICROSIEMENS_PER_CM,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Count (-)
-    (GiciskySensorDeviceClass.COUNT, None): SensorEntityDescription(
-        key=str(GiciskySensorDeviceClass.COUNT),
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # CO2 (parts per million)
-    (
-        GiciskySensorDeviceClass.CO2,
-        Units.CONCENTRATION_PARTS_PER_MILLION,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.CO2}_{Units.CONCENTRATION_PARTS_PER_MILLION}",
-        device_class=SensorDeviceClass.CO2,
-        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Current (Ampere)
-    (
-        GiciskySensorDeviceClass.CURRENT,
-        Units.ELECTRIC_CURRENT_AMPERE,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.CURRENT}_{Units.ELECTRIC_CURRENT_AMPERE}",
-        device_class=SensorDeviceClass.CURRENT,
-        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Dew Point (°C)
-    (GiciskySensorDeviceClass.DEW_POINT, Units.TEMP_CELSIUS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.DEW_POINT}_{Units.TEMP_CELSIUS}",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Directions (°)
-    (GiciskyExtendedSensorDeviceClass.DIRECTION, Units.DEGREE): SensorEntityDescription(
-        key=f"{GiciskyExtendedSensorDeviceClass.DIRECTION}_{Units.DEGREE}",
-        native_unit_of_measurement=DEGREE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Distance (mm)
-    (
-        GiciskySensorDeviceClass.DISTANCE,
-        Units.LENGTH_MILLIMETERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.DISTANCE}_{Units.LENGTH_MILLIMETERS}",
-        device_class=SensorDeviceClass.DISTANCE,
-        native_unit_of_measurement=UnitOfLength.MILLIMETERS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Distance (m)
-    (GiciskySensorDeviceClass.DISTANCE, Units.LENGTH_METERS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.DISTANCE}_{Units.LENGTH_METERS}",
-        device_class=SensorDeviceClass.DISTANCE,
-        native_unit_of_measurement=UnitOfLength.METERS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Duration (seconds)
-    (GiciskySensorDeviceClass.DURATION, Units.TIME_SECONDS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.DURATION}_{Units.TIME_SECONDS}",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Energy (kWh)
-    (
-        GiciskySensorDeviceClass.ENERGY,
-        Units.ENERGY_KILO_WATT_HOUR,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.ENERGY}_{Units.ENERGY_KILO_WATT_HOUR}",
-        device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        state_class=SensorStateClass.TOTAL,
-    ),
-    # Gas (m3)
-    (
-        GiciskySensorDeviceClass.GAS,
-        Units.VOLUME_CUBIC_METERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.GAS}_{Units.VOLUME_CUBIC_METERS}",
-        device_class=SensorDeviceClass.GAS,
-        native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
-        state_class=SensorStateClass.TOTAL,
-    ),
-    # Gyroscope (°/s)
-    (
-        GiciskySensorDeviceClass.GYROSCOPE,
-        Units.GYROSCOPE_DEGREES_PER_SECOND,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.GYROSCOPE}_{Units.GYROSCOPE_DEGREES_PER_SECOND}",
-        native_unit_of_measurement=Units.GYROSCOPE_DEGREES_PER_SECOND,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Humidity in (percent)
-    (GiciskySensorDeviceClass.HUMIDITY, Units.PERCENTAGE): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.HUMIDITY}_{Units.PERCENTAGE}",
-        device_class=SensorDeviceClass.HUMIDITY,
-        native_unit_of_measurement=PERCENTAGE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Illuminance (lux)
-    (GiciskySensorDeviceClass.ILLUMINANCE, Units.LIGHT_LUX): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.ILLUMINANCE}_{Units.LIGHT_LUX}",
-        device_class=SensorDeviceClass.ILLUMINANCE,
-        native_unit_of_measurement=LIGHT_LUX,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Mass sensor (kg)
-    (GiciskySensorDeviceClass.MASS, Units.MASS_KILOGRAMS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.MASS}_{Units.MASS_KILOGRAMS}",
-        device_class=SensorDeviceClass.WEIGHT,
-        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Mass sensor (lb)
-    (GiciskySensorDeviceClass.MASS, Units.MASS_POUNDS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.MASS}_{Units.MASS_POUNDS}",
-        device_class=SensorDeviceClass.WEIGHT,
-        native_unit_of_measurement=UnitOfMass.POUNDS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Moisture (percent)
-    (GiciskySensorDeviceClass.MOISTURE, Units.PERCENTAGE): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.MOISTURE}_{Units.PERCENTAGE}",
-        device_class=SensorDeviceClass.MOISTURE,
-        native_unit_of_measurement=PERCENTAGE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Packet Id (-)
-    (GiciskySensorDeviceClass.PACKET_ID, None): SensorEntityDescription(
-        key=str(GiciskySensorDeviceClass.PACKET_ID),
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-    ),
-    # PM10 (µg/m3)
-    (
-        GiciskySensorDeviceClass.PM10,
-        Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.PM10}_{Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER}",
-        device_class=SensorDeviceClass.PM10,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # PM2.5 (µg/m3)
-    (
-        GiciskySensorDeviceClass.PM25,
-        Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.PM25}_{Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER}",
-        device_class=SensorDeviceClass.PM25,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Power (Watt)
-    (GiciskySensorDeviceClass.POWER, Units.POWER_WATT): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.POWER}_{Units.POWER_WATT}",
-        device_class=SensorDeviceClass.POWER,
-        native_unit_of_measurement=UnitOfPower.WATT,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Precipitation (mm)
-    (
-        GiciskyExtendedSensorDeviceClass.PRECIPITATION,
-        Units.LENGTH_MILLIMETERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskyExtendedSensorDeviceClass.PRECIPITATION}_{Units.LENGTH_MILLIMETERS}",
-        device_class=SensorDeviceClass.PRECIPITATION,
-        native_unit_of_measurement=UnitOfLength.MILLIMETERS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Pressure (mbar)
-    (GiciskySensorDeviceClass.PRESSURE, Units.PRESSURE_MBAR): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.PRESSURE}_{Units.PRESSURE_MBAR}",
-        device_class=SensorDeviceClass.PRESSURE,
-        native_unit_of_measurement=UnitOfPressure.MBAR,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Raw (-)
-    (GiciskyExtendedSensorDeviceClass.RAW, None): SensorEntityDescription(
-        key=str(GiciskyExtendedSensorDeviceClass.RAW),
-    ),
-    # Rotation (°)
-    (GiciskySensorDeviceClass.ROTATION, Units.DEGREE): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.ROTATION}_{Units.DEGREE}",
-        native_unit_of_measurement=DEGREE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Signal Strength (RSSI) (dB)
-    (
-        GiciskySensorDeviceClass.SIGNAL_STRENGTH,
-        Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.SIGNAL_STRENGTH}_{Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT}",
-        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
-        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-    ),
-    # Speed (m/s)
-    (
-        GiciskySensorDeviceClass.SPEED,
-        Units.SPEED_METERS_PER_SECOND,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.SPEED}_{Units.SPEED_METERS_PER_SECOND}",
-        device_class=SensorDeviceClass.SPEED,
-        native_unit_of_measurement=UnitOfSpeed.METERS_PER_SECOND,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Temperature (°C)
-    (GiciskySensorDeviceClass.TEMPERATURE, Units.TEMP_CELSIUS): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.TEMPERATURE}_{Units.TEMP_CELSIUS}",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Text (-)
-    (GiciskyExtendedSensorDeviceClass.TEXT, None): SensorEntityDescription(
-        key=str(GiciskyExtendedSensorDeviceClass.TEXT),
-    ),
-    # Timestamp (datetime object)
-    (
-        GiciskySensorDeviceClass.TIMESTAMP,
-        None,
-    ): SensorEntityDescription(
-        key=str(GiciskySensorDeviceClass.TIMESTAMP),
-        device_class=SensorDeviceClass.TIMESTAMP,
-    ),
-    # UV index (-)
-    (
-        GiciskySensorDeviceClass.UV_INDEX,
-        None,
-    ): SensorEntityDescription(
-        key=str(GiciskySensorDeviceClass.UV_INDEX),
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Volatile organic Compounds (VOC) (µg/m3)
-    (
-        GiciskySensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS,
-        Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS}_{Units.CONCENTRATION_MICROGRAMS_PER_CUBIC_METER}",
-        device_class=SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-        state_class=SensorStateClass.MEASUREMENT,
     ),
     # Voltage (volt)
     (
@@ -347,56 +58,6 @@ SENSOR_DESCRIPTIONS = {
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    # Volume (L)
-    (
-        GiciskySensorDeviceClass.VOLUME,
-        Units.VOLUME_LITERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.VOLUME}_{Units.VOLUME_LITERS}",
-        device_class=SensorDeviceClass.VOLUME,
-        native_unit_of_measurement=UnitOfVolume.LITERS,
-        state_class=SensorStateClass.TOTAL,
-    ),
-    # Volume (mL)
-    (
-        GiciskySensorDeviceClass.VOLUME,
-        Units.VOLUME_MILLILITERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.VOLUME}_{Units.VOLUME_MILLILITERS}",
-        device_class=SensorDeviceClass.VOLUME,
-        native_unit_of_measurement=UnitOfVolume.MILLILITERS,
-        state_class=SensorStateClass.TOTAL,
-    ),
-    # Volume Flow Rate (m3/hour)
-    (
-        GiciskySensorDeviceClass.VOLUME_FLOW_RATE,
-        Units.VOLUME_FLOW_RATE_CUBIC_METERS_PER_HOUR,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.VOLUME_FLOW_RATE}_{Units.VOLUME_FLOW_RATE_CUBIC_METERS_PER_HOUR}",
-        device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
-        native_unit_of_measurement=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Volume Storage (L)
-    (
-        GiciskyExtendedSensorDeviceClass.VOLUME_STORAGE,
-        Units.VOLUME_LITERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskyExtendedSensorDeviceClass.VOLUME_STORAGE}_{Units.VOLUME_LITERS}",
-        device_class=SensorDeviceClass.VOLUME_STORAGE,
-        native_unit_of_measurement=UnitOfVolume.LITERS,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    # Water (L)
-    (
-        GiciskySensorDeviceClass.WATER,
-        Units.VOLUME_LITERS,
-    ): SensorEntityDescription(
-        key=f"{GiciskySensorDeviceClass.WATER}_{Units.VOLUME_LITERS}",
-        device_class=SensorDeviceClass.WATER,
-        native_unit_of_measurement=UnitOfVolume.LITERS,
-        state_class=SensorStateClass.TOTAL,
     ),
 }
 
