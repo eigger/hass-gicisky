@@ -4,10 +4,6 @@
       "name": "라벨 쓰기",
       "description": "Gicisky 기기에 라벨 이미지를 씁니다.",
       "fields": {
-        "device_id": {
-          "name": "기기",
-          "description": "쓸 대상 Gicisky 기기."
-        },
         "payload": {
           "name": "페이로드",
           "description": "그릴 내용을 정의하는 페이로드입니다."
@@ -38,10 +34,6 @@
       "name": "보호된 라벨 쓰기",
       "description": "보호 장치(중복 방지, 쓰기 잠금, 디바운스)를 적용하여 라벨 이미지를 씁니다.",
       "fields": {
-        "device_id": {
-          "name": "기기",
-          "description": "쓸 대상 Gicisky 기기."
-        },
         "payload": {
           "name": "페이로드",
           "description": "그릴 내용을 정의하는 페이로드입니다."

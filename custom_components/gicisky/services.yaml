@@ -1,11 +1,8 @@
 write:
+  target:
+    device:
+      manufacturer: Gicisky
   fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: gicisky
-          multiple: true
     payload:
       required: true
       example: |
@@ -62,13 +59,10 @@ write:
       selector:
         boolean:
 write_guarded:
+  target:
+    device:
+      manufacturer: Gicisky
   fields:
-    device_id:
-      required: true
-      selector:
-        device:
-          integration: gicisky
-          multiple: true
     payload:
       required: true
       example: |
