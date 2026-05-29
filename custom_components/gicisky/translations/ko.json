@@ -1,4 +1,70 @@
 {
+  "services": {
+    "write": {
+      "name": "라벨 쓰기",
+      "description": "Gicisky 기기에 라벨 이미지를 씁니다.",
+      "fields": {
+        "payload": {
+          "name": "페이로드",
+          "description": "그릴 내용을 정의하는 페이로드입니다."
+        },
+        "rotate": {
+          "name": "회전",
+          "description": "라벨 회전 각도(0, 90, 180, 270). 기본값: 0."
+        },
+        "background": {
+          "name": "배경",
+          "description": "배경색(white, black, red, yellow). 기본값: white."
+        },
+        "threshold": {
+          "name": "검정 임계값",
+          "description": "검정 이진화 임계값(0-255). 기본값: 128."
+        },
+        "red_threshold": {
+          "name": "빨강 임계값",
+          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        },
+        "dry_run": {
+          "name": "테스트 실행",
+          "description": "기기에 전송하지 않고 이미지만 생성합니다."
+        }
+      }
+    },
+    "write_guarded": {
+      "name": "보호된 라벨 쓰기",
+      "description": "보호 장치(중복 방지, 쓰기 잠금, 디바운스)를 적용하여 라벨 이미지를 씁니다.",
+      "fields": {
+        "payload": {
+          "name": "페이로드",
+          "description": "그릴 내용을 정의하는 페이로드입니다."
+        },
+        "rotate": {
+          "name": "회전",
+          "description": "라벨 회전 각도(0, 90, 180, 270). 기본값: 0."
+        },
+        "background": {
+          "name": "배경",
+          "description": "배경색(white, black, red, yellow). 기본값: white."
+        },
+        "threshold": {
+          "name": "검정 임계값",
+          "description": "검정 이진화 임계값(0-255). 기본값: 128."
+        },
+        "red_threshold": {
+          "name": "빨강 임계값",
+          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        },
+        "dry_run": {
+          "name": "테스트 실행",
+          "description": "기기에 전송하지 않고 이미지만 생성합니다."
+        },
+        "debounce_override_ms": {
+          "name": "디바운스 재정의",
+          "description": "이번 호출에 한해 설정된 디바운스 지연을 재정의합니다(0 = 즉시)."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "write_duration": { "name": "쓰기 소요 시간" },

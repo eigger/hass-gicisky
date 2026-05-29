@@ -4,7 +4,7 @@
       "service": "mdi:image-move"
     },
     "write_guarded": {
-      "service": "mdi:image-move"
+      "service": "mdi:image-check"
     }
   }
 }

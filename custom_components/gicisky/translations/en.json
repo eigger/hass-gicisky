@@ -1,4 +1,70 @@
 {
+  "services": {
+    "write": {
+      "name": "Write Label",
+      "description": "Write a label image to a Gicisky device.",
+      "fields": {
+        "payload": {
+          "name": "Payload",
+          "description": "Payload describing what to draw."
+        },
+        "rotate": {
+          "name": "Rotate",
+          "description": "Label rotation in degrees (0, 90, 180, 270). Default: 0."
+        },
+        "background": {
+          "name": "Background",
+          "description": "Background color (white, black, red, yellow). Default: white."
+        },
+        "threshold": {
+          "name": "Black Threshold",
+          "description": "Black binarization threshold (0-255). Default: 128."
+        },
+        "red_threshold": {
+          "name": "Red Threshold",
+          "description": "Red binarization threshold (0-255). Default: 128."
+        },
+        "dry_run": {
+          "name": "Dry Run",
+          "description": "Generate the image without sending it to the device."
+        }
+      }
+    },
+    "write_guarded": {
+      "name": "Write Guarded Label",
+      "description": "Write a label image with guards applied (duplicate, write lock, debounce).",
+      "fields": {
+        "payload": {
+          "name": "Payload",
+          "description": "Payload describing what to draw."
+        },
+        "rotate": {
+          "name": "Rotate",
+          "description": "Label rotation in degrees (0, 90, 180, 270). Default: 0."
+        },
+        "background": {
+          "name": "Background",
+          "description": "Background color (white, black, red, yellow). Default: white."
+        },
+        "threshold": {
+          "name": "Black Threshold",
+          "description": "Black binarization threshold (0-255). Default: 128."
+        },
+        "red_threshold": {
+          "name": "Red Threshold",
+          "description": "Red binarization threshold (0-255). Default: 128."
+        },
+        "dry_run": {
+          "name": "Dry Run",
+          "description": "Generate the image without sending it to the device."
+        },
+        "debounce_override_ms": {
+          "name": "Debounce Override",
+          "description": "Override the configured debounce delay for this call (0 = immediate)."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "write_duration": { "name": "Write Duration" },
