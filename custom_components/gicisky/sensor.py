@@ -20,6 +20,7 @@ from homeassistant.const import (
     ATTR_SW_VERSION,
     ATTR_HW_VERSION,
     PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
     UnitOfElectricPotential,
     UnitOfTime,
@@ -58,6 +59,18 @@ SENSOR_DESCRIPTIONS = {
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # Signal Strength (RSSI) (dBm) — added automatically by the bluetooth framework
+    (
+        GiciskySensorDeviceClass.SIGNAL_STRENGTH,
+        Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    ): SensorEntityDescription(
+        key=f"{GiciskySensorDeviceClass.SIGNAL_STRENGTH}_{Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT}",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
     ),
 }
 
