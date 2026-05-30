@@ -20,6 +20,7 @@ from homeassistant.const import (
     ATTR_SW_VERSION,
     ATTR_HW_VERSION,
     PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
     UnitOfElectricPotential,
     UnitOfTime,
@@ -59,6 +60,18 @@ SENSOR_DESCRIPTIONS = {
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    # Signal Strength (RSSI) (dBm) — added automatically by the bluetooth framework
+    (
+        GiciskySensorDeviceClass.SIGNAL_STRENGTH,
+        Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    ): SensorEntityDescription(
+        key=f"{GiciskySensorDeviceClass.SIGNAL_STRENGTH}_{Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT}",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
 }
 
 def hass_device_info(sensor_device_info):
@@ -91,10 +104,8 @@ def sensor_update_to_bluetooth_data_update(
             )
             for device_key, sensor_values in sensor_update.entity_values.items()
         },
-        entity_names={
-            device_key_to_bluetooth_entity_key(device_key): sensor_values.name
-            for device_key, sensor_values in sensor_update.entity_values.items()
-        },
+        # entity_names intentionally omitted so names come from the standard
+        # device_class (battery/voltage/signal_strength), which HA localizes.
     )
 
 
