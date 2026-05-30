@@ -104,10 +104,8 @@ def sensor_update_to_bluetooth_data_update(
             )
             for device_key, sensor_values in sensor_update.entity_values.items()
         },
-        entity_names={
-            device_key_to_bluetooth_entity_key(device_key): sensor_values.name
-            for device_key, sensor_values in sensor_update.entity_values.items()
-        },
+        # entity_names intentionally omitted so names come from the standard
+        # device_class (battery/voltage/signal_strength), which HA localizes.
     )
 
 
