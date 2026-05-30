@@ -96,7 +96,7 @@
         }
       },
       "bluetooth_confirm": {
-        "description": "{name} 기기를 설정하시겠습니까?"
+        "description": "이 기기를 설정하시겠습니까?"
       }
     },
     "abort": {
