@@ -206,7 +206,10 @@ class GiciskyClient:
                         raise Exception(f"Packet Error: {data}")
                     status = self.Status.IMAGE_DATA
 
-                elif status == self.Status.IMAGE_DATA:  
+                elif status == self.Status.IMAGE_DATA:
+                    if part * 240 >= self.packet_size:
+                        _LOGGER.debug("Requested part %s past end -> complete", part)
+                        break
                     data = await self.write_image_with_response(part)
                     if len(data) < 6 or data[0] != 0x05 or data[1] != 0x00:
                         break
