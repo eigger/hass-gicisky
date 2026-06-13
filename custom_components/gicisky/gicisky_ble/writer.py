@@ -428,7 +428,7 @@ class GiciskyClient:
                     bit_pos = 7
         raw = bytes(bw_plane) + bytes(red_plane)
         try:
-            compressed = compress_data(raw, force_raw=True)  # TODO: QuickLZ 호환 확인 후 force_raw 제거
+            compressed = compress_data(raw)  # QuickLZ L1 압축 (벤더 호환 64버킷 해시)
             # compress_data 반환: [4B part2_len] + compressed_part1 + compressed_part2
             # prefix 없이 그대로 반환 (7.5"의 total_len 헤더와 동일한 위치)
             _LOGGER.debug(
