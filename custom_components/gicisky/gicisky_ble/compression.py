@@ -1,19 +1,28 @@
 """
 Compression utilities for BLE image transfer.
 
-표준 QuickLZ Level 1 (1.5.x) 호환 구현.
+QuickLZ Level 1 호환 구현 (벤더 펌웨어 호환).
 - 64바이트 청크 단위 독립 압축
 - 0x75: 압축 청크 (QuickLZ L1), 0x74: 비압축 청크 (raw)
-- 12비트 해시 기반 매치 (직접 오프셋 아님)
+- 6비트(64버킷) 해시 기반 매치 (직접 오프셋 아님)
 - Short match (2B): bits 0-3 = matchlen-2, bits 4-15 = hash
 - Long match (3B): bits 0-3 = 0, bits 4-15 = hash, byte2 = matchlen
+
+해시 테이블 크기 주의:
+스톡 QuickLZ는 12비트(4096버킷) 해시를 쓰지만, 패널 벤더 펌웨어
+(libble_jni.so / qlz_compress_core)는 `(fetch ^ (fetch >> 12)) & 0x3F`,
+즉 6비트(64버킷) 해시만 사용한다. 인코더가 64 이상의 해시값을 매치
+토큰에 기록하면 패널 디코더는 채워진 적 없는 슬롯을 조회해 잘못된
+오프셋으로 복사 → 무음 디코드 실패가 발생한다. 따라서 벤더와 동일한
+64버킷 해시를 사용해야 실기에서 안정적으로 디코드된다.
 """
 from __future__ import annotations
 
 import struct
 
 _CWORD_LEN = 4
-_HASH_VALUES = 4096
+_HASH_VALUES = 64  # 벤더 펌웨어가 6비트 해시(0x3F)를 사용. 스톡 QuickLZ는 4096.
+_NO_ENTRY = -1  # 해시 슬롯 미사용 sentinel (offset 0도 유효 매치 위치이므로 0을 쓰지 않음)
 _MINOFFSET = 2
 _UNCONDITIONAL_MATCHLEN_COMPRESSOR = 12
 _UNCOMPRESSED_END = 4
@@ -68,7 +77,7 @@ def _qlz_compress_core(source) -> bytes | None:
     lits = 0
 
     # 해시 테이블: offset, cache
-    h_offset = [0] * _HASH_VALUES
+    h_offset = [_NO_ENTRY] * _HASH_VALUES
     h_cache = [0] * _HASH_VALUES
 
     while src <= last_matchstart:
@@ -90,7 +99,7 @@ def _qlz_compress_core(source) -> bytes | None:
         h_offset[h] = src
 
         dist = src - o
-        if (cached & 0xFFFFFF) == 0 and o != 0 and (
+        if (cached & 0xFFFFFF) == 0 and o != _NO_ENTRY and (
             dist > _MINOFFSET
             or (
                 src == o + 1
@@ -194,7 +203,7 @@ def _qlz_decompress_core(stream, dest_size: int) -> bytes:
     cword_val = 1
 
     # 해시 테이블 (디코더): hash → 출력 위치
-    hash_offset: list[int] = [0] * _HASH_VALUES
+    hash_offset: list[int] = [_NO_ENTRY] * _HASH_VALUES
     last_hashed = -1
 
     while dst <= last_dst:
@@ -211,7 +220,7 @@ def _qlz_decompress_core(stream, dest_size: int) -> bytes:
             if src + 2 > n:
                 break
             fetch_lo = stream[src] | (stream[src + 1] << 8)
-            h = (fetch_lo >> 4) & 0xFFF
+            h = (fetch_lo >> 4) & (_HASH_VALUES - 1)
             matchlen_indicator = fetch_lo & 0xF
 
             if matchlen_indicator != 0:
