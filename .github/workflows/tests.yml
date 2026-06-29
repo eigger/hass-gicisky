@@ -28,7 +28,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install pytest
-          pip install "imagespec[datamatrix]==0.1.0"
+          python -c "import json; print('\\n'.join(json.load(open('custom_components/gicisky/manifest.json'))['requirements']))" > requirements.txt
+          pip install -r requirements.txt
           
       - name: Run tests
         run: |
