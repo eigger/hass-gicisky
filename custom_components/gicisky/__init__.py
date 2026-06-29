@@ -10,7 +10,7 @@ import asyncio
 from asyncio import sleep, Lock
 from io import BytesIO
 
-from .renderer import *
+from .renderer import render_image
 from .gicisky_ble import GiciskyBluetoothDeviceData, SensorUpdate
 from .gicisky_ble.writer import update_image
 from homeassistant.components.bluetooth import (
