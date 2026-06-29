@@ -122,6 +122,14 @@ After adding a device, you can configure the following options via **Settings > 
 
 ---
 
+## Rendering Engine: `imagespec`
+
+Starting from version 5.0.0, this integration uses **[imagespec](https://github.com/eigger/imagespec)** as its unified, declarative rendering engine. It parses a YAML payload of drawing instructions into a PIL image which is then packed and sent to the e-paper display.
+
+For the details of each element's specs and supported attributes (such as custom shapes, gauges, plots, tables, and barcodes), refer to the [imagespec elements documentation](https://github.com/eigger/imagespec#elements).
+
+---
+
 ## Service: `gicisky.write`
 
 ### Service Parameters
