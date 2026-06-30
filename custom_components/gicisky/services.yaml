@@ -37,22 +37,11 @@ write:
             - "black"
             - "red"
             - "yellow"
-    threshold:
+    dither:
       required: false
-      example: 128
+      example: false
       selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
-    red_threshold:
-      required: false
-      example: 128
-      selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
+        boolean:
     dry_run:
       required: false
       example: 'false'
@@ -97,22 +86,11 @@ write_guarded:
             - "black"
             - "red"
             - "yellow"
-    threshold:
+    dither:
       required: false
-      example: 128
+      example: false
       selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
-    red_threshold:
-      required: false
-      example: 128
-      selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
+        boolean:
     dry_run:
       required: false
       example: 'false'
