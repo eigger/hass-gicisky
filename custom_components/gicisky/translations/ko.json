@@ -16,13 +16,9 @@
           "name": "배경",
           "description": "배경색(white, black, red, yellow). 기본값: white."
         },
-        "threshold": {
-          "name": "검정 임계값",
-          "description": "검정 이진화 임계값(0-255). 기본값: 128."
-        },
-        "red_threshold": {
-          "name": "빨강 임계값",
-          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        "dither": {
+          "name": "디더링",
+          "description": "이미지에 플로이드-스타인버그 디더링을 적용합니다. 기본값: false."
         },
         "dry_run": {
           "name": "테스트 실행",
@@ -46,13 +42,9 @@
           "name": "배경",
           "description": "배경색(white, black, red, yellow). 기본값: white."
         },
-        "threshold": {
-          "name": "검정 임계값",
-          "description": "검정 이진화 임계값(0-255). 기본값: 128."
-        },
-        "red_threshold": {
-          "name": "빨강 임계값",
-          "description": "빨강 이진화 임계값(0-255). 기본값: 128."
+        "dither": {
+          "name": "디더링",
+          "description": "이미지에 플로이드-스타인버그 디더링을 적용합니다. 기본값: false."
         },
         "dry_run": {
           "name": "테스트 실행",
