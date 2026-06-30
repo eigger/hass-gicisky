@@ -44,8 +44,6 @@ async def update_image(
     ble_device: BLEDevice,
     device: DeviceEntry,
     image: Image,
-    threshold: int,
-    red_threshold: int,
     attempt: int = 1,
     write_delay_ms: int = 0
 ) -> bool:
@@ -63,7 +61,7 @@ async def update_image(
         sorted_uuids = sorted(char_uuids, key=lambda x: int(x[4:8], 16))
         gicisky = GiciskyClient(client, sorted_uuids, device, attempt, write_delay_ms)
         await gicisky.start_notify()
-        success = await gicisky.write_image(image, threshold, red_threshold)
+        success = await gicisky.write_image(image)
         try:
             await gicisky.stop_notify()
         except Exception as e:
@@ -179,12 +177,12 @@ class GiciskyClient:
     async def write_image_with_response(self, part:int) -> bytes:
         return await self.write_with_response(self.img_uuid, self._make_size_packet(part))
     
-    async def write_image(self, image: Image, threshold: int, red_threshold: int) -> None:
+    async def write_image(self, image: Image) -> None:
         part = 0
         last_part = -1
         same_part_count = 0
         status = self.Status.START
-        self.image_packets = self._make_image_packet(image, threshold, red_threshold)
+        self.image_packets = self._make_image_packet(image)
         self.packet_size = len(self.image_packets)
         try:
             while True:
@@ -259,7 +257,7 @@ class GiciskyClient:
         base_rgb.paste(ov, position)
         return base_rgb
 
-    def _make_image_packet(self, image: Image, threshold: int, red_threshold: int) -> list[int]:
+    def _make_image_packet(self, image: Image) -> list[int]:
         img = Image.new('RGB', (self.width, self.height), color='white')
         img = self._overlay_images(img, image)
         tft = self.tft
@@ -275,10 +273,10 @@ class GiciskyClient:
         pixels = img.load()
 
         if self.four_color:
-            return self._make_four_color_packet(pixels, width, height, threshold, red_threshold)
+            return self._make_four_color_packet(pixels, width, height)
 
         if self.compression2:
-            return self._compress_byte_data_2(pixels, width, height, threshold, red_threshold)
+            return self._compress_byte_data_2(pixels, width, height)
 
         byte_data = []
         byte_data_red = []
@@ -291,14 +289,18 @@ class GiciskyClient:
                 px = (x, y)
                 r, g, b = pixels[px]
 
-                luminance = ((r * 38) + (g * 75) + (b * 15)) >> 7
+                pixel_is_white = (r > 128 and g > 128 and b > 128)
+                pixel_is_black = (r <= 128 and g <= 128 and b <= 128)
+
                 if self.invert_luminance:
-                    if luminance < threshold:
-                        current_byte |= (1 << bit_pos)
+                    is_white = pixel_is_black
                 else:
-                    if luminance > threshold:
-                        current_byte |= (1 << bit_pos)
-                if (r > red_threshold) and (g < red_threshold):
+                    is_white = pixel_is_white
+
+                if is_white:
+                    current_byte |= (1 << bit_pos)
+
+                if (r > 128) and (g <= 128) and (b <= 128):
                     current_byte_red |= (1 << bit_pos)
 
                 bit_pos -= 1
@@ -321,7 +323,7 @@ class GiciskyClient:
         combined = byte_data + byte_data_red if self.support_red else byte_data
         return list(bytearray(combined))
 
-    def _make_four_color_packet(self, pixels, width, height, threshold, red_threshold) -> list[int]:
+    def _make_four_color_packet(self, pixels, width, height) -> list[int]:
         byte_data = []
         current_byte = 0
         shift_counter = 3
@@ -330,16 +332,16 @@ class GiciskyClient:
             for x in range(width - 1, -1, -1) if self.mirror_x else range(width):
                 r, g, b = pixels[(x, y)]
                 
-                # Calculate weighted luminance for white detection
-                luminance = ((r * 38) + (g * 75) + (b * 15)) >> 7
+                pixel_is_white = (r > 128 and g > 128 and b > 128)
+                pixel_is_black = (r <= 128 and g <= 128 and b <= 128)
                 
                 if self.invert_luminance:
-                    is_white = luminance < threshold
+                    is_white = pixel_is_black
                 else:
-                    is_white = luminance > threshold
-                is_red = r > red_threshold
-                is_green = g > red_threshold
-                is_blue = b > red_threshold
+                    is_white = pixel_is_white
+                is_red = r > 128
+                is_green = g > 128
+                is_blue = b > 128
                 
                 if is_green and is_red and is_blue:
                    is_green = False
@@ -395,7 +397,7 @@ class GiciskyClient:
 
         return list(bytearray(buf))
 
-    def _compress_byte_data_2(self, pixels, width, height, threshold, red_threshold) -> list[int]:
+    def _compress_byte_data_2(self, pixels, width, height) -> list[int]:
         """1-bit dual plane BWR packing + compress. Used when compression2=True.
 
         Part1: BW plane (1=white, 0=black), MSB first, row-major
@@ -412,12 +414,13 @@ class GiciskyClient:
         for y in y_range:
             for x in x_range:
                 r, g, b = pixels[x, y]
-                luminance = (r * 38 + g * 75 + b * 15) >> 7
+                pixel_is_white = (r > 128 and g > 128 and b > 128)
+                pixel_is_black = (r <= 128 and g <= 128 and b <= 128)
                 if self.invert_luminance:
-                    is_white = luminance < threshold
+                    is_white = pixel_is_black
                 else:
-                    is_white = luminance > threshold
-                is_red = (r > red_threshold) and (g < red_threshold)
+                    is_white = pixel_is_white
+                is_red = (r > 128) and (g <= 128)
                 if is_white:
                     bw_plane[byte_idx] |= (1 << bit_pos)
                 if is_red:

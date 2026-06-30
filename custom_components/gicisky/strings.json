@@ -16,13 +16,9 @@
           "name": "Background",
           "description": "Background color (white, black, red, yellow). Default: white."
         },
-        "threshold": {
-          "name": "Black Threshold",
-          "description": "Black binarization threshold (0-255). Default: 128."
-        },
-        "red_threshold": {
-          "name": "Red Threshold",
-          "description": "Red binarization threshold (0-255). Default: 128."
+        "dither": {
+          "name": "Dither",
+          "description": "Apply Floyd-Steinberg dithering to the image. Default: false."
         },
         "dry_run": {
           "name": "Dry Run",
@@ -46,13 +42,9 @@
           "name": "Background",
           "description": "Background color (white, black, red, yellow). Default: white."
         },
-        "threshold": {
-          "name": "Black Threshold",
-          "description": "Black binarization threshold (0-255). Default: 128."
-        },
-        "red_threshold": {
-          "name": "Red Threshold",
-          "description": "Red binarization threshold (0-255). Default: 128."
+        "dither": {
+          "name": "Dither",
+          "description": "Apply Floyd-Steinberg dithering to the image. Default: false."
         },
         "dry_run": {
           "name": "Dry Run",

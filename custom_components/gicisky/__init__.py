@@ -203,8 +203,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             _LOGGER.error(f"Cannot write to {address}: Device metadata is not ready yet. Please check power/range and wait for BLE data.")
             return None
 
-        threshold = int(service.data.get("threshold", 128))
-        red_threshold = int(service.data.get("red_threshold", 128))
         image = await hass.async_add_executor_job(render_image, entry_id, data.device, service, hass)
         image_bytes = BytesIO()
         image.save(image_bytes, "PNG")
@@ -222,8 +220,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
             "failure_coordinator": failure_coordinator,
             "last_failure_coordinator": last_failure_coordinator,
             "ble_device": ble_device,
-            "threshold": threshold,
-            "red_threshold": red_threshold,
             "image": image,
             "current_image_data": current_image_data,
             "max_retries": max_retries,
@@ -241,8 +237,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
         failure_coordinator = context["failure_coordinator"]
         last_failure_coordinator = context["last_failure_coordinator"]
         ble_device = context["ble_device"]
-        threshold = context["threshold"]
-        red_threshold = context["red_threshold"]
         image = context["image"]
         current_image_data = context["current_image_data"]
         max_retries = context["max_retries"]
@@ -257,7 +251,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
 
         try:
             for attempt in range(1, max_retries + 1):
-                success = await update_image(ble_device, data.device, image, threshold, red_threshold, attempt=attempt, write_delay_ms=write_delay_ms)
+                success = await update_image(ble_device, data.device, image, attempt=attempt, write_delay_ms=write_delay_ms)
                 if success:
                     image_coordinator.async_set_updated_data(current_image_data)
                     return
