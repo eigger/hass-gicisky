@@ -1,0 +1,178 @@
+alias: 4.2 기상청
+description: ""
+triggers:
+  - trigger: time
+    at:
+      - "08:00:00"
+      - "11:00:00"
+      - "14:00:00"
+      - "17:00:00"
+conditions:
+  - condition: time
+    weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+actions:
+  - variables:
+      location: company
+  - variables:
+      wn_weather: weather.{{ location }}
+      wn_rain_sensor: sensor.{{ location }}_rain_snow_forecast_search
+      wn_precip_sensor: sensor.{{ location }}_precipitation_1h
+      wn_snow_sensor: sensor.{{ location }}_snowfall_1h_forecast
+      font_bold: fonts/GmarketSansTTFBold.ttf
+      font_med: fonts/GmarketSansTTFMedium.ttf
+  - action: weather.get_forecasts
+    data:
+      type: daily
+    response_variable: weather_forecast
+    target:
+      entity_id: "{{ wn_weather }}"
+  - variables:
+      time_str: "{{ now().strftime('%H:%M') }}"
+      date_str: >
+        {% set days = ['일','월','화','수','목','금','토'] %} {{
+        now().strftime('%m.%d') }} ({{ days[now().strftime('%w')|int] }})
+      weather_state: "{{ states(wn_weather) }}"
+      weather_state_kr: |-
+        {% set state_en = states(wn_weather) %} {% set translate_weather = {
+          "clear-night": "맑은 밤",
+          "cloudy": "흐림",
+          "exceptional": "이상 기후",
+          "fog": "안개",
+          "hail": "우박",
+          "lightning": "번개",
+          "lightning-rainy": "뇌우",
+          "partlycloudy": "구름 조금",
+          "pouring": "폭우",
+          "rainy": "비",
+          "snowy": "눈",
+          "snowy-rainy": "진눈깨비",
+          "sunny": "맑음",
+          "windy": "바람",
+          "windy-variant": "돌풍"
+        } %} {{ translate_weather.get(state_en, state_en) }}
+      temp_now: "{{ state_attr(wn_weather, 'temperature') | default(0) | round(1) }}"
+      forecast_today: "{{ weather_forecast[wn_weather].forecast[0] }}"
+      temp_min: "{{ forecast_today.templow | default(0) | round(0) }}"
+      temp_max: "{{ forecast_today.temperature | default(0) | round(0) }}"
+      weather_rain_info: >-
+        {% set precip = states(wn_precip_sensor) | float(0) %} {% set snow =
+        states(wn_snow_sensor) | float(0) %} {% if precip > 0 %}
+          현재 비 {{ precip }}mm
+        {% elif snow > 0 %}
+          현재 눈 {{ snow }}cm
+        {% else %}
+          {% set expected_time = state_attr(wn_rain_sensor, 'expected_time') %}
+          {% set state = states(wn_rain_sensor) %}
+          {% set translate_rain = {
+            "none": "없음",
+            "rain": "비",
+            "rain_snow": "비/눈",
+            "snow": "눈",
+            "shower": "소나기"
+          } %}
+          {% set korean_state = translate_rain.get(state, state) %}
+          {% if state in ['none', 'unknown', 'unavailable'] or not expected_time %}
+            비/눈 소식 없음
+          {% else %}
+            {% set time = as_timestamp(expected_time) | timestamp_custom('%H') %}
+            {{ time }}시 {{ korean_state }}
+          {% endif %}
+        {% endif %}
+      weather_rain_color: >-
+        {% set precip = states(wn_precip_sensor) | float(0) %} {% set snow =
+        states(wn_snow_sensor) | float(0) %} {% set current_status =
+        states(wn_rain_sensor) %} {% if precip > 0 or snow > 0 %}
+          red
+        {% elif current_status in ['rain', 'rain_snow', 'snow', 'shower'] %}
+          red
+        {% else %}
+          black
+        {% endif %}
+  - action: gicisky.write
+    data:
+      payload:
+        - type: rectangle
+          x_start: 0
+          y_start: 0
+          x_end: 400
+          y_end: 300
+          fill: white
+          outline: white
+        - type: rectangle
+          x_start: 0
+          y_start: 0
+          x_end: 400
+          y_end: 55
+          fill: black
+          outline: black
+        - type: text
+          value: "{{ date_str }}"
+          x: 20
+          "y": 27
+          size: 24
+          font: "{{ font_bold }}"
+          color: white
+          anchor: lm
+        - type: text
+          value: "{{ time_str }} 기준"
+          x: 380
+          "y": 27
+          size: 22
+          font: "{{ font_med }}"
+          color: white
+          anchor: rm
+        - type: icon
+          value: weather-{{ weather_state }}
+          x: 100
+          "y": 125
+          size: 110
+          color: black
+          anchor: mm
+        - type: text
+          value: "{{ weather_state_kr }}"
+          x: 100
+          "y": 195
+          size: 24
+          font: "{{ font_bold }}"
+          color: black
+          anchor: mm
+        - type: text
+          value: "{{ temp_now }}°"
+          x: 290
+          "y": 125
+          size: 85
+          font: "{{ font_bold }}"
+          color: black
+          anchor: mm
+        - type: text
+          value: 최저 {{ temp_min }}° / 최고 {{ temp_max }}°
+          x: 290
+          "y": 195
+          size: 22
+          font: "{{ font_med }}"
+          color: black
+          anchor: mm
+        - type: line
+          x_start: 20
+          x_end: 380
+          y_start: 225
+          y_end: 225
+          width: 2
+          fill: black
+        - type: text
+          value: "{{ weather_rain_info }}"
+          x: 200
+          "y": 252
+          size: 20
+          font: "{{ font_bold }}"
+          color: "{{ weather_rain_color }}"
+          anchor: mm
+      dither: true
+    target:
+      device_id: 8f69c732cd0aef9a2c879f5de5634445
+mode: single
