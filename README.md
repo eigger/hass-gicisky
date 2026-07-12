@@ -25,6 +25,10 @@ They work well for information that should stay visible, changes infrequently, a
 - Found a bug? [Open an issue](https://github.com/eigger/hass-gicisky/issues)
 - Questions or ideas? [Join the discussion](https://github.com/eigger/hass-gicisky/discussions)
 
+## Related
+
+- [Stash](https://github.com/eigger/stash) — self-hosted home inventory manager. Track and restock items with barcode scanning, and print labels to Gicisky devices via Home Assistant.
+
 ---
 
 ## Supported Models
