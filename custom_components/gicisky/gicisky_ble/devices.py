@@ -98,8 +98,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=212,
         height=104,
         rotation=270,
-        mirror_x=True,
-        compression2=True,
+        mirror_x=True
     ),
     0x010B: DeviceEntry(
         name="EPD 21",
@@ -107,8 +106,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=250,
         height=128,
         rotation=270,
-        mirror_x=True,
-        compression2=True,
+        mirror_x=True
     ),
     0x0028: DeviceEntry(
         name="EPD 29",
@@ -125,7 +123,6 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=296,
         height=128,
         rotation=90,
-        compression2=True,
         max_voltage=3.0
     ),
     0x002E: DeviceEntry(
@@ -144,7 +141,7 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         height=416,
         rotation=180,
         mirror_x=True,
-        compression2=True,
+        compression=True,
         max_voltage=3.0
     ),
     0x004E: DeviceEntry(
@@ -160,7 +157,6 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         model="EPD 4.2\" BWR",
         width=400,
         height=300,
-        compression2=True,
         max_voltage=3.0
     ),
     0x012B: DeviceEntry(
