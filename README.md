@@ -103,6 +103,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 | Element examples with preview images | [imagespec/docs/elements.md](https://github.com/eigger/imagespec/blob/main/docs/elements.md) |
 | All element fields & defaults | [imagespec README — Element Reference](https://github.com/eigger/imagespec#elements-reference) |
 | Layout, palette, LLM authoring guide | [imagespec/docs/authoring.md](https://github.com/eigger/imagespec/blob/main/docs/authoring.md) |
+| Dithering (per-element only) | [imagespec/docs/dithering.md](https://github.com/eigger/imagespec/blob/main/docs/dithering.md) |
 
 **Gicisky-specific behaviour:**
 
@@ -112,7 +113,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 - **Default font:** `NotoSansKR-Regular.ttf` in `custom_components/gicisky/fonts/`. Custom fonts also work from `www/fonts/`.
 - **`plot` element:** reads history from Home Assistant **Recorder**.
 - **`dlimg`:** local file paths under `/config/...` are allowed (HTTP/HTTPS and data URIs too).
-- **`dither`:** set on photos/charts in the **payload** (e.g. `dlimg` / `pie` with `dither: floyd`). There is no service-level dither — whole-image dither blurs text. See [imagespec dithering docs](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
+- **Dithering:** not a service option. Put `dither` on individual payload elements that need it (photos, charts). Leave text without `dither`. See [dithering.md](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
 - **Layout:** prefer `row` / `column` / `stack` over hand-placed coordinates.
 - **Image entities:** each tag exposes **Last Updated Content** (last image sent) and **Preview Content** (`dry_run` renders).
 
@@ -144,6 +145,36 @@ data:
       x: 10
       y: 10
       size: 40
+```
+
+### Per-element dither (photos / charts)
+
+Do **not** dither the whole panel. Add `dither` only on elements that benefit:
+
+```yaml
+action: gicisky.write
+target:
+  device_id: <your device>
+data:
+  payload:
+    - type: text
+      value: Living room
+      x: 10
+      y: 10
+      size: 28
+    - type: dlimg
+      url: "/config/www/photo.jpg"
+      x: 10
+      y: 50
+      xsize: 180
+      ysize: 120
+      dither: floyd   # or atkinson, bayer8, …
+    - type: pie
+      x: 210
+      y: 60
+      radius: 50
+      values: "A,40,orange;B,60,blue"
+      dither: atkinson
 ```
 
 Rotation and background:
