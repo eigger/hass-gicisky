@@ -112,7 +112,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 - **Default font:** `NotoSansKR-Regular.ttf` in `custom_components/gicisky/fonts/`. Custom fonts also work from `www/fonts/`.
 - **`plot` element:** reads history from Home Assistant **Recorder**.
 - **`dlimg`:** local file paths under `/config/...` are allowed (HTTP/HTTPS and data URIs too).
-- **`dither`:** halftone for photos/charts on limited-color panels — see [imagespec dithering docs](https://github.com/eigger/imagespec#dithering).
+- **`dither`:** service field or per-element key. Use `true`/`floyd` (or another method) to halftone photos/charts; `false`/`none` for flat nearest — see [imagespec dithering docs](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
 - **Layout:** prefer `row` / `column` / `stack` over hand-placed coordinates.
 - **Image entities:** each tag exposes **Last Updated Content** (last image sent) and **Preview Content** (`dry_run` renders).
 
@@ -129,7 +129,7 @@ Renders the payload and sends it to the tag (unless `dry_run: true`).
 | `payload` | yes | — | List of [imagespec elements](https://github.com/eigger/imagespec/blob/main/docs/elements.md) |
 | `rotate` | no | `0` | `0`, `90`, `180`, or `270` |
 | `background` | no | `white` | `white`, `black`, `red`, or `yellow` |
-| `dither` | no | `false` | Floyd–Steinberg halftone for the whole image |
+| `dither` | no | `none` / `false` | Palette dither method (`none`, `floyd`, `atkinson`, `bayer8`, …). `true` ≡ `floyd`. |
 | `dry_run` | no | `false` | Render only; updates **Preview Content** image entity without BLE send |
 
 Basic example:
