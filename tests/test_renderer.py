@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
-import pytest
 from custom_components.gicisky.renderer import render_image
+
 
 def test_render_image():
     # Arrange
@@ -30,8 +30,8 @@ def test_render_image():
     assert image.size == (296, 128)
 
 
-def test_render_image_dither():
-    # Arrange
+def test_render_image_per_element_dither():
+    """Service has no dither; use per-element dither for photos/charts only."""
     device = MagicMock()
     device.width = 10
     device.height = 10
@@ -41,64 +41,42 @@ def test_render_image_dither():
     hass = MagicMock()
     hass.config.path = MagicMock(return_value="/tmp/mock_fonts")
 
-    # 1. Render without dither (flat)
-    service_no_dither = MagicMock()
-    service_no_dither.data = {
+    service_flat = MagicMock()
+    service_flat.data = {
         "payload": [
             {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#b0b0b0", "outline": "#b0b0b0"}
         ],
-        "dither": False,
-        "background": "white"
+        "background": "white",
     }
-    img_no_dither = render_image("dummy_entity", device, service_no_dither, hass)
+    img_flat = render_image("dummy_entity", device, service_flat, hass)
 
-    # 2. Render with dither
     service_dither = MagicMock()
     service_dither.data = {
         "payload": [
-            {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#b0b0b0", "outline": "#b0b0b0"}
+            {
+                "type": "rectangle",
+                "x_start": 0,
+                "y_start": 0,
+                "x_end": 10,
+                "y_end": 10,
+                "fill": "#b0b0b0",
+                "outline": "#b0b0b0",
+                "dither": "floyd",
+            }
         ],
-        "dither": True,
-        "background": "white"
+        "background": "white",
     }
     img_dither = render_image("dummy_entity", device, service_dither, hass)
 
-    # Assert
-    w, h = img_no_dither.size
-    pixels_no_dither = [img_no_dither.getpixel((x, y)) for y in range(h) for x in range(w)]
-    unique_no_dither = set(pixels_no_dither)
-    assert len(unique_no_dither) == 1
+    w, h = img_flat.size
+    unique_flat = {img_flat.getpixel((x, y)) for y in range(h) for x in range(w)}
+    assert len(unique_flat) == 1
 
-    pixels_dither = [img_dither.getpixel((x, y)) for y in range(h) for x in range(w)]
-    unique_dither = set(pixels_dither)
-    assert (0, 0, 0) in unique_dither
-    assert (255, 255, 255) in unique_dither
+    unique_dither = {img_dither.getpixel((x, y)) for y in range(h) for x in range(w)}
+    assert unique_dither == {(0, 0, 0), (255, 255, 255)}
 
 
-def test_render_image_dither_method_string():
-    device = MagicMock()
-    device.width = 10
-    device.height = 10
-    device.four_color = False
-    device.red = False
-    hass = MagicMock()
-    hass.config.path = MagicMock(return_value="/tmp/mock_fonts")
-    service = MagicMock()
-    service.data = {
-        "payload": [
-            {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#b0b0b0", "outline": "#b0b0b0"}
-        ],
-        "dither": "bayer8",
-        "background": "white",
-    }
-    img = render_image("dummy_entity", device, service, hass)
-    colors = {img.getpixel((x, y)) for y in range(img.height) for x in range(img.width)}
-    assert colors <= {(0, 0, 0), (255, 255, 255)}
-    assert len(colors) == 2
-
-
-def test_render_image_dither_pink_gray():
-    # Arrange for a 3-color device (black, white, red)
+def test_render_image_per_element_dither_pink_bwr():
     device_bwr = MagicMock()
     device_bwr.width = 10
     device_bwr.height = 10
@@ -108,39 +86,38 @@ def test_render_image_dither_pink_gray():
     hass = MagicMock()
     hass.config.path = MagicMock(return_value="/tmp/mock_fonts")
 
-    # 1. Render pink (#FFC0CB) without dither
-    service_pink_no_dither = MagicMock()
-    service_pink_no_dither.data = {
+    service_flat = MagicMock()
+    service_flat.data = {
         "payload": [
             {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#FFC0CB", "outline": "#FFC0CB"}
         ],
-        "dither": False,
-        "background": "white"
+        "background": "white",
     }
-    img_pink_no_dither = render_image("dummy_entity", device_bwr, service_pink_no_dither, hass)
+    img_flat = render_image("dummy_entity", device_bwr, service_flat, hass)
 
-    # 2. Render pink (#FFC0CB) with dither
-    service_pink_dither = MagicMock()
-    service_pink_dither.data = {
+    service_dither = MagicMock()
+    service_dither.data = {
         "payload": [
-            {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#FFC0CB", "outline": "#FFC0CB"}
+            {
+                "type": "rectangle",
+                "x_start": 0,
+                "y_start": 0,
+                "x_end": 10,
+                "y_end": 10,
+                "fill": "#FFC0CB",
+                "outline": "#FFC0CB",
+                "dither": True,
+            }
         ],
-        "dither": True,
-        "background": "white"
+        "background": "white",
     }
-    img_pink_dither = render_image("dummy_entity", device_bwr, service_pink_dither, hass)
+    img_dither = render_image("dummy_entity", device_bwr, service_dither, hass)
 
-    # Without dither, pink snaps to white (255, 255, 255) because it's closer to white than red (255, 0, 0)
-    w_bwr, h_bwr = img_pink_no_dither.size
-    pixels_pink_no_dither = [img_pink_no_dither.getpixel((x, y)) for y in range(h_bwr) for x in range(w_bwr)]
-    unique_pink_no_dither = set(pixels_pink_no_dither)
-    assert len(unique_pink_no_dither) == 1
-    assert (255, 255, 255) in unique_pink_no_dither
+    # Without dither, pink snaps to white
+    unique_flat = {img_flat.getpixel((x, y)) for y in range(10) for x in range(10)}
+    assert unique_flat == {(255, 255, 255)}
 
-    # With dither, pink maps to a mixture of red (255, 0, 0) and white (255, 255, 255)
-    pixels_pink_dither = [img_pink_dither.getpixel((x, y)) for y in range(h_bwr) for x in range(w_bwr)]
-    unique_pink_dither = set(pixels_pink_dither)
-    assert (255, 255, 255) in unique_pink_dither
-    assert (255, 0, 0) in unique_pink_dither
-
-
+    # With per-element dither, pink becomes a red/white halftone
+    unique_dither = {img_dither.getpixel((x, y)) for y in range(10) for x in range(10)}
+    assert (255, 255, 255) in unique_dither
+    assert (255, 0, 0) in unique_dither

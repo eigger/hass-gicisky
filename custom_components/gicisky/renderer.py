@@ -60,8 +60,6 @@ def render_image(entity_id, device, service, hass):
     else:
         palette = ["black", "white"]
 
-    dither = service.data.get("dither", False)
-
     try:
         return render(
             payload=service.data.get("payload", ""),
@@ -70,7 +68,7 @@ def render_image(entity_id, device, service, hass):
             rotate=int(service.data.get("rotate", 0)),
             rotate_mode="canvas",  # ESL panel: fixed resolution, background rotates
             background=service.data.get("background", "white"),
-            dither=dither,
+            dither=False,
             context=_make_context(hass, default_font="NotoSansKR-Regular.ttf", palette=palette),
         )
     except RenderError as err:

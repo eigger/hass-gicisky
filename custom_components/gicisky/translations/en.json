@@ -16,10 +16,6 @@
           "name": "Background",
           "description": "Background color (white, black, red, yellow). Default: white."
         },
-        "dither": {
-          "name": "Dither",
-          "description": "Palette dither method for the whole image (none, floyd, atkinson, bayer8, …). Boolean true/false still work (floyd/none). Default: none."
-        },
         "dry_run": {
           "name": "Dry Run",
           "description": "Generate the image without sending it to the device."
@@ -42,10 +38,6 @@
           "name": "Background",
           "description": "Background color (white, black, red, yellow). Default: white."
         },
-        "dither": {
-          "name": "Dither",
-          "description": "Palette dither method for the whole image (none, floyd, atkinson, bayer8, …). Boolean true/false still work (floyd/none). Default: none."
-        },
         "dry_run": {
           "name": "Dry Run",
           "description": "Generate the image without sending it to the device."
@@ -59,23 +51,41 @@
   },
   "entity": {
     "sensor": {
-      "write_duration": { "name": "Write Duration" },
-      "failure_count": { "name": "Failure Count" },
-      "last_failure_time": { "name": "Last Failure Time" }
+      "write_duration": {
+        "name": "Write Duration"
+      },
+      "failure_count": {
+        "name": "Failure Count"
+      },
+      "last_failure_time": {
+        "name": "Last Failure Time"
+      }
     },
     "binary_sensor": {
-      "connectivity": { "name": "Connectivity" },
-      "display_in_sync": { "name": "Display In Sync" }
+      "connectivity": {
+        "name": "Connectivity"
+      },
+      "display_in_sync": {
+        "name": "Display In Sync"
+      }
     },
     "image": {
-      "last_updated_content": { "name": "Last Updated Content" },
-      "preview_content": { "name": "Preview Content" }
+      "last_updated_content": {
+        "name": "Last Updated Content"
+      },
+      "preview_content": {
+        "name": "Preview Content"
+      }
     },
     "text": {
-      "alias": { "name": "Alias" }
+      "alias": {
+        "name": "Alias"
+      }
     },
     "switch": {
-      "write_lock": { "name": "Write Lock" }
+      "write_lock": {
+        "name": "Write Lock"
+      }
     }
   },
   "config": {
