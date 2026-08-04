@@ -60,7 +60,7 @@ def render_image(entity_id, device, service, hass):
     else:
         palette = ["black", "white"]
 
-    dither = bool(service.data.get("dither", False))
+    dither = service.data.get("dither", False)
 
     try:
         return render(

@@ -75,6 +75,28 @@ def test_render_image_dither():
     assert (255, 255, 255) in unique_dither
 
 
+def test_render_image_dither_method_string():
+    device = MagicMock()
+    device.width = 10
+    device.height = 10
+    device.four_color = False
+    device.red = False
+    hass = MagicMock()
+    hass.config.path = MagicMock(return_value="/tmp/mock_fonts")
+    service = MagicMock()
+    service.data = {
+        "payload": [
+            {"type": "rectangle", "x_start": 0, "y_start": 0, "x_end": 10, "y_end": 10, "fill": "#b0b0b0", "outline": "#b0b0b0"}
+        ],
+        "dither": "bayer8",
+        "background": "white",
+    }
+    img = render_image("dummy_entity", device, service, hass)
+    colors = {img.getpixel((x, y)) for y in range(img.height) for x in range(img.width)}
+    assert colors <= {(0, 0, 0), (255, 255, 255)}
+    assert len(colors) == 2
+
+
 def test_render_image_dither_pink_gray():
     # Arrange for a 3-color device (black, white, red)
     device_bwr = MagicMock()
