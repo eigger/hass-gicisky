@@ -172,7 +172,6 @@ actions:
           font: "{{ font_bold }}"
           color: "{{ weather_rain_color }}"
           anchor: mm
-      dither: true
     target:
       device_id: 8f69c732cd0aef9a2c879f5de5634445
 mode: single

@@ -16,10 +16,6 @@
           "name": "배경",
           "description": "배경색(white, black, red, yellow). 기본값: white."
         },
-        "dither": {
-          "name": "디더링",
-          "description": "이미지 전체에 적용할 팔레트 디더 방법(none, floyd, atkinson, bayer8 등). true/false도 그대로 동작합니다(floyd/none). 기본값: none."
-        },
         "dry_run": {
           "name": "테스트 실행",
           "description": "기기에 전송하지 않고 이미지만 생성합니다."
@@ -42,10 +38,6 @@
           "name": "배경",
           "description": "배경색(white, black, red, yellow). 기본값: white."
         },
-        "dither": {
-          "name": "디더링",
-          "description": "이미지 전체에 적용할 팔레트 디더 방법(none, floyd, atkinson, bayer8 등). true/false도 그대로 동작합니다(floyd/none). 기본값: none."
-        },
         "dry_run": {
           "name": "테스트 실행",
           "description": "기기에 전송하지 않고 이미지만 생성합니다."
@@ -59,23 +51,41 @@
   },
   "entity": {
     "sensor": {
-      "write_duration": { "name": "쓰기 소요 시간" },
-      "failure_count": { "name": "실패 횟수" },
-      "last_failure_time": { "name": "마지막 실패 시각" }
+      "write_duration": {
+        "name": "쓰기 소요 시간"
+      },
+      "failure_count": {
+        "name": "실패 횟수"
+      },
+      "last_failure_time": {
+        "name": "마지막 실패 시각"
+      }
     },
     "binary_sensor": {
-      "connectivity": { "name": "연결 상태" },
-      "display_in_sync": { "name": "디스플레이 동기화 상태" }
+      "connectivity": {
+        "name": "연결 상태"
+      },
+      "display_in_sync": {
+        "name": "디스플레이 동기화 상태"
+      }
     },
     "image": {
-      "last_updated_content": { "name": "마지막 업데이트 콘텐츠" },
-      "preview_content": { "name": "미리보기 콘텐츠" }
+      "last_updated_content": {
+        "name": "마지막 업데이트 콘텐츠"
+      },
+      "preview_content": {
+        "name": "미리보기 콘텐츠"
+      }
     },
     "text": {
-      "alias": { "name": "별칭" }
+      "alias": {
+        "name": "별칭"
+      }
     },
     "switch": {
-      "write_lock": { "name": "쓰기 잠금" }
+      "write_lock": {
+        "name": "쓰기 잠금"
+      }
     }
   },
   "config": {

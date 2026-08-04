@@ -103,6 +103,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 | Element examples with preview images | [imagespec/docs/elements.md](https://github.com/eigger/imagespec/blob/main/docs/elements.md) |
 | All element fields & defaults | [imagespec README — Element Reference](https://github.com/eigger/imagespec#elements-reference) |
 | Layout, palette, LLM authoring guide | [imagespec/docs/authoring.md](https://github.com/eigger/imagespec/blob/main/docs/authoring.md) |
+| Dithering (per-element only) | [imagespec/docs/dithering.md](https://github.com/eigger/imagespec/blob/main/docs/dithering.md) |
 
 **Gicisky-specific behaviour:**
 
@@ -112,7 +113,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 - **Default font:** `NotoSansKR-Regular.ttf` in `custom_components/gicisky/fonts/`. Custom fonts also work from `www/fonts/`.
 - **`plot` element:** reads history from Home Assistant **Recorder**.
 - **`dlimg`:** local file paths under `/config/...` are allowed (HTTP/HTTPS and data URIs too).
-- **`dither`:** service field or per-element key. Use `true`/`floyd` (or another method) to halftone photos/charts; `false`/`none` for flat nearest — see [imagespec dithering docs](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
+- **Dithering:** not a service option. Put `dither` on **photos and charts** in the payload — `dlimg`, `pie`, `diagram`, `plot`, `sparkline`, `progress_bar`, `gauge` — when they use off-palette colors. Leave text without `dither`. See [dithering.md](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
 - **Layout:** prefer `row` / `column` / `stack` over hand-placed coordinates.
 - **Image entities:** each tag exposes **Last Updated Content** (last image sent) and **Preview Content** (`dry_run` renders).
 
@@ -129,7 +130,6 @@ Renders the payload and sends it to the tag (unless `dry_run: true`).
 | `payload` | yes | — | List of [imagespec elements](https://github.com/eigger/imagespec/blob/main/docs/elements.md) |
 | `rotate` | no | `0` | `0`, `90`, `180`, or `270` |
 | `background` | no | `white` | `white`, `black`, `red`, or `yellow` |
-| `dither` | no | `none` / `false` | Palette dither method (`none`, `floyd`, `atkinson`, `bayer8`, …). `true` ≡ `floyd`. |
 | `dry_run` | no | `false` | Render only; updates **Preview Content** image entity without BLE send |
 
 Basic example:
@@ -145,6 +145,47 @@ data:
       x: 10
       y: 10
       size: 40
+```
+
+### Per-element dither (photos / charts)
+
+Do **not** dither the whole panel. Add `dither` on chart/media elements that use
+off-palette colors (`dlimg`, `pie`, `diagram`, `plot`, `sparkline`,
+`progress_bar`, `gauge`):
+
+```yaml
+action: gicisky.write
+target:
+  device_id: <your device>
+data:
+  payload:
+    - type: text
+      value: Living room
+      x: 10
+      y: 8
+      size: 28
+    - type: dlimg
+      url: "/config/www/photo.jpg"
+      x: 10
+      y: 40
+      xsize: 120
+      ysize: 90
+      dither: floyd
+    - type: pie
+      x: 150
+      y: 40
+      radius: 40
+      values: "A,40,orange;B,60,blue"
+      dither: atkinson
+    - type: diagram
+      x: 250
+      y: 40
+      width: 130
+      height: 90
+      bars:
+        values: "Mon,10;Tue,25;Wed,15;Thu,30"
+        color: orange
+      dither: bayer8
 ```
 
 Rotation and background:
@@ -242,7 +283,7 @@ Same rendering as `gicisky.write`, with guards before BLE transmission:
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `payload` | yes | — | Same as `gicisky.write` |
-| `rotate`, `background`, `dither`, `dry_run` | no | — | Same as `gicisky.write` |
+| `rotate`, `background`, `dry_run` | no | — | Same as `gicisky.write` |
 | `debounce_override_ms` | no | option value | Override debounce for this call (`0` = write immediately) |
 
 ```yaml
