@@ -173,3 +173,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .DS_Store
+
+# Claude Code local config and session data
+.claude/
