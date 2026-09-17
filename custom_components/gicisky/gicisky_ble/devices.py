@@ -16,8 +16,11 @@ class DeviceEntry:
     compression2: bool = False  # True: 2-bit BWR packing + compress (e.g. EPD 10.2")
     invert_luminance: bool = False
     manufacturer: str = "Gicisky"
-    max_voltage: float = 2.9
-    min_voltage: float = 2.2
+    # Battery % is a linear map of the advertised voltage over min-max, and at
+    # or below min the battery-low binary sensor turns on. Below 2.5 V e-paper
+    # refresh becomes unreliable even though BLE communication still works.
+    max_voltage: float = 3.0
+    min_voltage: float = 2.5
     four_color: bool = False
 
 # ===========================================================================================
@@ -114,16 +117,14 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=296,
         height=128,
         rotation=90,
-        red=False,
-        max_voltage=3.0
+        red=False
     ),
     0x0033: DeviceEntry(
         name="EPD 29",
         model="EPD 2.9\" BWR",
         width=296,
         height=128,
-        rotation=90,
-        max_voltage=3.0
+        rotation=90
     ),
     0x002E: DeviceEntry(
         name="EPD 29",
@@ -131,7 +132,6 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         width=296,
         height=128,
         rotation=90,
-        max_voltage=3.0,
         four_color=True,
     ),
     0x022B: DeviceEntry(
@@ -141,23 +141,20 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         height=416,
         rotation=180,
         mirror_x=True,
-        compression=True,
-        max_voltage=3.0
+        compression=True
     ),
     0x004E: DeviceEntry(
         name="EPD 42",
         model="EPD 4.2\" BWRY",
         width=400,
         height=300,
-        max_voltage=3.0,
         four_color=True,
     ),
     0x004B: DeviceEntry(
         name="EPD 42",
         model="EPD 4.2\" BWR",
         width=400,
-        height=300,
-        max_voltage=3.0
+        height=300
     ),
     0x012B: DeviceEntry(
         name="EPD 75",
@@ -167,16 +164,14 @@ DEVICE_TYPES: dict[int, DeviceEntry] = {
         mirror_y=True,
         #compression=True,
         invert_luminance=True,
-        compression2=True,
-        max_voltage=3.0
+        compression2=True
     ),
     0x008B: DeviceEntry(
         name="EPD 102",
         model="EPD 10.2\" BWR",
         width=960,
         height=640,
-        compression2=True,
-        max_voltage=3.2
+        compression2=True
     ),
 }
 
