@@ -75,8 +75,8 @@ class GiciskyBluetoothDeviceData(BluetoothData):
         min_volt = device.min_voltage
         max_volt = device.max_voltage
         batt = (volt - min_volt) * 100 / (max_volt - min_volt)
-        batt = max(0.0, min(100.0, batt))
-        self.update_predefined_sensor(SensorLibrary.BATTERY__PERCENTAGE, round(batt, 1))
+        batt = max(0, min(100, round(batt)))
+        self.update_predefined_sensor(SensorLibrary.BATTERY__PERCENTAGE, batt)
         self.update_predefined_sensor(
             SensorLibrary.VOLTAGE__ELECTRIC_POTENTIAL_VOLT, round(volt, 1)
         )
