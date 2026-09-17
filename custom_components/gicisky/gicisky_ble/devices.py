@@ -19,7 +19,7 @@ class DeviceEntry:
     # Battery % is a linear map of the advertised voltage over min-max, and at
     # or below min the battery-low binary sensor turns on. Below 2.5 V e-paper
     # refresh becomes unreliable even though BLE communication still works.
-    max_voltage: float = 3.0
+    max_voltage: float = 2.9
     min_voltage: float = 2.5
     four_color: bool = False
 
