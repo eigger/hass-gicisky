@@ -67,9 +67,6 @@
       },
       "display_in_sync": {
         "name": "디스플레이 동기화 상태"
-      },
-      "battery_low": {
-        "name": "배터리 부족"
       }
     },
     "image": {

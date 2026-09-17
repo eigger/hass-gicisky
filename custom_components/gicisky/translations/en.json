@@ -67,9 +67,6 @@
       },
       "display_in_sync": {
         "name": "Display In Sync"
-      },
-      "battery_low": {
-        "name": "Battery Low"
       }
     },
     "image": {

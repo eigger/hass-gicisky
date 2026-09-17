@@ -57,8 +57,7 @@
     },
     "binary_sensor": {
       "connectivity": { "name": "Connectivity" },
-      "display_in_sync": { "name": "Display In Sync" },
-      "battery_low": { "name": "Battery Low" }
+      "display_in_sync": { "name": "Display In Sync" }
     },
     "image": {
       "last_updated_content": { "name": "Last Updated Content" },

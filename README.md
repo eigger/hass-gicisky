@@ -116,7 +116,7 @@ From version 5.0.0, labels are rendered with **[imagespec](https://github.com/ei
 - **Dithering:** not a service option. Put `dither` on **photos and charts** in the payload — `dlimg`, `pie`, `diagram`, `plot`, `sparkline`, `progress_bar`, `gauge` — when they use off-palette colors. Leave text without `dither`. See [dithering.md](https://github.com/eigger/imagespec/blob/main/docs/dithering.md).
 - **Layout:** prefer `row` / `column` / `stack` over hand-placed coordinates.
 - **Image entities:** each tag exposes **Last Updated Content** (last image sent) and **Preview Content** (`dry_run` renders).
-- **Battery:** the advertised voltage (0.1 V steps) is mapped linearly over 2.5–2.9 V to **Battery** (%), and a **Battery Low** binary sensor turns on at **2.5 V or below** — below that, e-paper refresh becomes unreliable even though BLE still works.
+- **Battery:** the advertised voltage (0.1 V steps) is mapped linearly over 2.5–2.9 V to **Battery** (%), and a **Battery** binary sensor (low battery) turns on at **2.5 V or below** — below that, e-paper refresh becomes unreliable even though BLE still works.
 
 ---
 

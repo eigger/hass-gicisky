@@ -36,7 +36,6 @@ BINARY_SENSOR_DESCRIPTIONS = {
     GiciskyBinarySensorDeviceClass.BATTERY: BinarySensorEntityDescription(
         key=GiciskyBinarySensorDeviceClass.BATTERY,
         device_class=BinarySensorDeviceClass.BATTERY,
-        translation_key="battery_low",
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
 }
@@ -62,7 +61,8 @@ def sensor_update_to_bluetooth_data_update(
             device_key_to_bluetooth_entity_key(device_key): sensor_values.native_value
             for device_key, sensor_values in sensor_update.binary_entity_values.items()
         },
-        # entity_names intentionally omitted so names come from translation_key.
+        # entity_names intentionally omitted so names come from the standard
+        # device_class (battery), which HA localizes.
     )
 
 
