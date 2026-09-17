@@ -3,9 +3,15 @@
 from __future__ import annotations
 import logging
 
+from .gicisky_ble import BinarySensorDeviceClass as GiciskyBinarySensorDeviceClass, SensorUpdate
+from homeassistant.components.bluetooth.passive_update_processor import (
+    PassiveBluetoothDataUpdate,
+    PassiveBluetoothProcessorEntity,
+)
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
@@ -15,6 +21,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.config_entries import ConfigEntry
 from propcache.api import cached_property
+from .coordinator import GiciskyPassiveBluetoothDataProcessor
+from .device import device_key_to_bluetooth_entity_key, hass_device_info
 from .types import GiciskyConfigEntry
 from .const import (
     DOMAIN
@@ -22,12 +30,61 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+BINARY_SENSOR_DESCRIPTIONS = {
+    # Battery low: on when the advertised voltage is at or below the level where
+    # e-paper refresh becomes unreliable even though BLE still works.
+    GiciskyBinarySensorDeviceClass.BATTERY: BinarySensorEntityDescription(
+        key=GiciskyBinarySensorDeviceClass.BATTERY,
+        device_class=BinarySensorDeviceClass.BATTERY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+}
+
+
+def sensor_update_to_bluetooth_data_update(
+    sensor_update: SensorUpdate,
+) -> PassiveBluetoothDataUpdate[bool | None]:
+    """Convert a sensor update to a bluetooth data update."""
+    return PassiveBluetoothDataUpdate(
+        devices={
+            device_id: hass_device_info(device_info)
+            for device_id, device_info in sensor_update.devices.items()
+        },
+        entity_descriptions={
+            device_key_to_bluetooth_entity_key(device_key): BINARY_SENSOR_DESCRIPTIONS[
+                description.device_class
+            ]
+            for device_key, description in sensor_update.binary_entity_descriptions.items()
+            if description.device_class in BINARY_SENSOR_DESCRIPTIONS
+        },
+        entity_data={
+            device_key_to_bluetooth_entity_key(device_key): sensor_values.native_value
+            for device_key, sensor_values in sensor_update.binary_entity_values.items()
+        },
+        # entity_names intentionally omitted so names come from the standard
+        # device_class (battery), which HA localizes.
+    )
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: GiciskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Gicisky BLE binary sensors."""
+    coordinator = entry.runtime_data
+    processor = GiciskyPassiveBluetoothDataProcessor(
+        sensor_update_to_bluetooth_data_update
+    )
+    entry.async_on_unload(
+        processor.async_add_entities_listener(
+            GiciskyBluetoothBinarySensorEntity, async_add_entities
+        )
+    )
+    entry.async_on_unload(
+        coordinator.async_register_processor(processor, BinarySensorEntityDescription)
+    )
+
     connectivity_coordinator = hass.data[DOMAIN][entry.entry_id]["connectivity_coordinator"]
     image_coordinator = hass.data[DOMAIN][entry.entry_id]["image_coordinator"]
     preview_coordinator = hass.data[DOMAIN][entry.entry_id]["preview_coordinator"]
@@ -35,6 +92,18 @@ async def async_setup_entry(
         GiciskyBluetoothConnectivitySensorEntity(hass, entry, connectivity_coordinator),
         GiciskyDisplayInSyncBinarySensor(hass, entry, image_coordinator, preview_coordinator),
     ])
+
+class GiciskyBluetoothBinarySensorEntity(
+    PassiveBluetoothProcessorEntity[GiciskyPassiveBluetoothDataProcessor[bool | None]],
+    BinarySensorEntity,
+):
+    """Representation of a Gicisky BLE binary sensor."""
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return the native value."""
+        return self.processor.entity_data.get(self.entity_key)
+
 
 class GiciskyBluetoothConnectivitySensorEntity(
     CoordinatorEntity[DataUpdateCoordinator[bool]],

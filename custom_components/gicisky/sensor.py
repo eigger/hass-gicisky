@@ -17,8 +17,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    ATTR_SW_VERSION,
-    ATTR_HW_VERSION,
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
@@ -28,13 +26,12 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_BLUETOOTH
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 from propcache.api import cached_property
 
 from .coordinator import GiciskyPassiveBluetoothDataProcessor
-from .device import device_key_to_bluetooth_entity_key
+from .device import device_key_to_bluetooth_entity_key, hass_device_info
 from .types import GiciskyConfigEntry
 from .const import DOMAIN
 
@@ -75,13 +72,6 @@ SENSOR_DESCRIPTIONS = {
     ),
 }
 
-def hass_device_info(sensor_device_info):
-    device_info = sensor_device_info_to_hass_device_info(sensor_device_info)
-    if sensor_device_info.sw_version is not None:
-        device_info[ATTR_SW_VERSION] = sensor_device_info.sw_version
-    if sensor_device_info.hw_version is not None:
-        device_info[ATTR_HW_VERSION] = sensor_device_info.hw_version
-    return device_info
     
 def sensor_update_to_bluetooth_data_update(
     sensor_update: SensorUpdate,
