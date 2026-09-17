@@ -59,6 +59,7 @@ SENSOR_DESCRIPTIONS = {
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=1,
     ),
     # Signal Strength (RSSI) (dBm) — added automatically by the bluetooth framework
     (
