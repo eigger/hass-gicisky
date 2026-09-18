@@ -6,6 +6,15 @@
 
 Gicisky BLE Label Home Assistant Integration
 
+> [!IMPORTANT]
+> ## 🚚 This project has moved to [**hass-ble-esl**](https://github.com/eigger/hass-ble-esl)
+>
+> Development continues in **[eigger/hass-ble-esl](https://github.com/eigger/hass-ble-esl)** — one integration for BLE e-paper shelf labels covering **Gicisky (PickSmart)** as well as **Zhsunyco (WOLINK / easyTag)** tags. Everything here (all models, services, examples) is supported there, and the payload format is unchanged.
+>
+> This repository is now in **maintenance mode** and will be archived later: it keeps working as-is, but new features land only in hass-ble-esl. Existing installs are not affected — you can keep using `gicisky`.
+>
+> **To switch:** the integration domain changes (`gicisky` → `ble_esl`), so devices must be re-added. See the [migration guide](https://github.com/eigger/hass-ble-esl#migrating-from-hass-gicisky-or-hass-zhsunyco).
+
 ## Gallery
 
 | Size | Example |
