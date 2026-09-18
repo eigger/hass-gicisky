@@ -17,6 +17,7 @@ from homeassistant.components.bluetooth import (
     BluetoothScanningMode,
     BluetoothServiceInfoBleak,
     async_ble_device_from_address,
+    async_last_service_info,
 )
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -80,6 +81,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
     assert address is not None
 
     data = GiciskyBluetoothDeviceData()
+    last_service_info = async_last_service_info(hass, address, connectable=True)
+    if last_service_info is not None:
+        data.supported(last_service_info)
     hass.data[DOMAIN][entry.entry_id] = {}
     hass.data[DOMAIN][entry.entry_id]['address'] = address
     hass.data[DOMAIN][entry.entry_id]['data'] = data
@@ -92,8 +96,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiciskyConfigEntry) -> b
     device_entry = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(CONNECTION_BLUETOOTH, address)},
-        manufacturer="Gicisky",
-        name=f"Gicisky {_identifier}",
+        manufacturer=data.device.manufacturer if data.device else "Gicisky",
+        name=f"{data.device.manufacturer if data.device else 'Gicisky'} {_identifier}",
     )
     hass.data[DOMAIN][entry.entry_id]["device_id"] = device_entry.id
     bt_coordinator = GiciskyPassiveBluetoothProcessorCoordinator(

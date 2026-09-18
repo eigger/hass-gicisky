@@ -188,8 +188,6 @@ class GiciskyDurationSensorEntity(
         """Return device info."""
         return DeviceInfo(
             connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
         )
 
     @cached_property
@@ -246,8 +244,6 @@ class GiciskyFailureCountSensorEntity(
         """Return device info."""
         return DeviceInfo(
             connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
         )
 
     @cached_property
@@ -292,8 +288,6 @@ class GiciskyLastFailureTimeSensorEntity(
         """Return device info."""
         return DeviceInfo(
             connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
         )
 
     @cached_property

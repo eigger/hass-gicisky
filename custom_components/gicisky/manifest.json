@@ -8,6 +8,10 @@
     {
       "manufacturer_id": 20563,
       "connectable": true
+    },
+    {
+      "manufacturer_id": 21080,
+      "connectable": true
     }
   ],
   "codeowners": [

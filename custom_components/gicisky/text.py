@@ -43,8 +43,6 @@ class GiciskyTextEntity(RestoreText):
                     self._address,
                 )
             },
-            name = f"Gicisky {self._identifier}",
-            manufacturer = "Gicisky",
         )
     
     @cached_property

@@ -13,6 +13,7 @@ from bleak_retry_connector import establish_connection
 
 from .devices import DeviceEntry
 from .compression import compress as compress_data
+from .xte import XteClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +51,8 @@ async def update_image(
     client: BleakClient | None = None
     try:
         client = await establish_connection(BleakClient, ble_device, ble_device.address)
+        if device.protocol == "xte":
+            return await XteClient(client, attempt, write_delay_ms).write_image(image)
         services = client.services
         char_uuids = [
             c.uuid

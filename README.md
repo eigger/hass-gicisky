@@ -33,6 +33,11 @@ They work well for information that should stay visible, changes infrequently, a
 
 ## Supported Models
 
+This fork additionally includes **experimental Poshiji PSJ-420 support**
+(400x300, BWRY, XTE protocol). See [setup, limits and validation](docs/poshiji-psj420.md).
+Packet encoding is capture-verified and an initial screen write was confirmed
+by the device owner; repeated updates are still being validated.
+
 | Type | Size | Resolution | Colors |
 |------|------|------------|--------|
 | TFT | 2.1" | 250 × 132 | BW |

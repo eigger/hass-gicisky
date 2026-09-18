@@ -45,8 +45,6 @@ class GiciskyWriteLockSwitch(RestoreEntity, SwitchEntity):
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
             connections={(CONNECTION_BLUETOOTH, self._address)},
-            name=f"Gicisky {self._identifier}",
-            manufacturer="Gicisky",
         )
 
     @cached_property

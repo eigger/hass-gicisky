@@ -22,6 +22,19 @@ class DeviceEntry:
     max_voltage: float = 2.9
     min_voltage: float = 2.5
     four_color: bool = False
+    protocol: str = "gicisky"
+
+
+# Separate profile: its advertisement does not contain a Gicisky device ID.
+PSJ_420 = DeviceEntry(
+    name="PSJ-420",
+    model="PSJ-420 (experimental)",
+    width=400,
+    height=300,
+    four_color=True,
+    manufacturer="Poshiji",
+    protocol="xte",
+)
 
 # ===========================================================================================
 #     ID = ((data[4] << 8) | data[0]) & 0x3FFF

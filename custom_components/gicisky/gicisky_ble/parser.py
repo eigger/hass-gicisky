@@ -8,7 +8,8 @@ from sensor_state_data import (
     SensorLibrary,
 )
 
-from .devices import get_device, DeviceEntry
+from .devices import get_device, DeviceEntry, PSJ_420
+from .xte import MANUFACTURER_ID, is_psj420_advertisement
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +35,17 @@ class GiciskyBluetoothDeviceData(BluetoothData):
 
     def _start_update(self, service_info: BluetoothServiceInfoBleak) -> None:
         """Update from BLE advertisement data."""
+        if is_psj420_advertisement(service_info.manufacturer_data.get(MANUFACTURER_ID)):
+            self.device = PSJ_420
+            self.last_service_info = service_info
+            identifier = service_info.address.replace(":", "")[-8:]
+            self.set_title(f"{identifier} ({PSJ_420.model})")
+            self.set_device_name(f"Poshiji {identifier}")
+            self.set_device_type(f"{PSJ_420.model} 400x300")
+            self.set_device_manufacturer("Poshiji")
+            # No voltage, battery, firmware or hardware field has been decoded.
+            # Do not reuse the unrelated five-byte Gicisky advertisement parser.
+            return None
         #_LOGGER.info("Parsing Gicisky BLE advertisement data: %s", service_info)
         if 0x5053 in service_info.manufacturer_data:
             #_LOGGER.info("BLE Info: %s", service_info)
