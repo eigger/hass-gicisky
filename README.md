@@ -7,13 +7,13 @@
 Gicisky BLE Label Home Assistant Integration
 
 > [!IMPORTANT]
-> ## 🚚 This project has moved to [**hass-ble-esl**](https://github.com/eigger/hass-ble-esl)
+> ## 🚚 This project has moved — repository archived
 >
-> Development continues in **[eigger/hass-ble-esl](https://github.com/eigger/hass-ble-esl)** — one integration for BLE e-paper shelf labels covering **Gicisky (PickSmart)** as well as **Zhsunyco (WOLINK / easyTag)** tags. Everything here (all models, services, examples) is supported there, and the payload format is unchanged.
+> Development continues in **[eigger/hass-ble-esl](https://github.com/eigger/hass-ble-esl)** — one integration for BLE e-paper shelf labels covering **Gicisky (PickSmart)** as well as **Zhsunyco (WOLINK / easyTag)** and other brands. Everything here (all models, services, examples) is supported there, and the **payload format is unchanged**.
 >
-> This repository is now in **maintenance mode** and will be archived later: it keeps working as-is, but new features land only in hass-ble-esl. Existing installs are not affected — you can keep using `gicisky`.
+> This repository is **archived** and will not receive further updates. Existing `gicisky` installs keep working for now, but new features and fixes land only in hass-ble-esl.
 >
-> **To switch:** the integration domain changes (`gicisky` → `ble_esl`), so devices must be re-added. See the [migration guide](https://github.com/eigger/hass-ble-esl#migrating-from-hass-gicisky-or-hass-zhsunyco).
+> **To migrate:** the integration domain changes (`gicisky` → `ble_esl`), so devices must be re-added and actions renamed (`gicisky.write` → `ble_esl.write`). See the [migration guide](https://github.com/eigger/hass-ble-esl/blob/main/docs/migration.md) and release [5.5.1](https://github.com/eigger/hass-gicisky/releases/tag/5.5.1).
 
 ## Gallery
 
